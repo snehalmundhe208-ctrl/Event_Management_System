@@ -1,0 +1,42 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const errorHandler = require('./middleware/error');
+
+const authRoutes = require('./modules/auth/auth.routes');
+const eventsRoutes = require('./modules/events/events.routes');
+const registrationsRoutes = require('./modules/registrations/registrations.routes');
+const ticketsRoutes = require('./modules/tickets/tickets.routes');
+const checkinRoutes = require('./modules/checkin/checkin.routes');
+const notificationsRoutes = require('./modules/notifications/notifications.routes');
+const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
+const feedbackRoutes = require('./modules/feedback/feedback.routes');
+const galleryRoutes = require('./modules/gallery/gallery.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
+
+const app = express();
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/events', eventsRoutes);
+app.use('/api/v1/registrations', registrationsRoutes);
+app.use('/api/v1/tickets', ticketsRoutes);
+app.use('/api/v1/checkin', checkinRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/feedback', feedbackRoutes);
+app.use('/api/v1/gallery', galleryRoutes);
+app.use('/api/v1/admin', adminRoutes);
+
+app.use(errorHandler);
+
+module.exports = app;
