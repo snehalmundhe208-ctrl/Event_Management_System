@@ -118,148 +118,90 @@ export default function Events() {
   const isOrganizerOrAdmin = user?.roles?.includes('organizer') || user?.roles?.includes('admin');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="page-shell py-8 sm:py-10">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">Discover Events</h1>
-          <p className="mt-2 text-slate-400">Find and register for workshops, meetups, and conferences.</p>
+          <h1 className="page-title">Discover events</h1>
+          <p className="page-subtitle">Search, filter, and discover meaningful experiences crafted for every audience.</p>
         </div>
         {isOrganizerOrAdmin && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center space-x-2"
-          >
+          <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2 self-start">
             <Plus className="h-5 w-5" />
-            <span>Create Event</span>
+            <span>Create event</span>
           </button>
         )}
       </div>
 
-      <div className="card p-6 mb-8 space-y-4">
-        <div className="flex items-center bg-slate-700/50 border border-slate-600 px-4 py-2 rounded-lg">
-          <Search className="h-5 w-5 text-slate-300 mr-2" />
-          <input
-            type="text"
-            placeholder="Search by keyword..."
-            className="bg-transparent border-none outline-none w-full text-sm text-slate-100 placeholder-slate-500 focus:ring-0"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
+      <div className="card mb-8 p-5 sm:p-6">
+        <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-sm">
+          <Search className="mr-2 h-5 w-5 text-slate-400" />
+          <input type="text" placeholder="Search by keyword..." className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-5">
           <div>
             <label className="label-base">Category</label>
-            <select
-              className="select-base"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+            <select className="select-base" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+              <option value="">All categories</option>
+              {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
             </select>
           </div>
-
           <div>
             <label className="label-base">Tag</label>
-            <select
-              className="select-base"
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-            >
-              <option value="">All Tags</option>
-              {tags.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
+            <select className="select-base" value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)}>
+              <option value="">All tags</option>
+              {tags.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
             </select>
           </div>
-
           <div>
             <label className="label-base">Type</label>
-            <select
-              className="select-base"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              <option value="">All Types</option>
-              <option value="in-person">In-Person</option>
+            <select className="select-base" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
+              <option value="">All types</option>
+              <option value="in-person">In-person</option>
               <option value="online">Online</option>
               <option value="hybrid">Hybrid</option>
             </select>
           </div>
-
           <div>
-            <label className="label-base">Start Date</label>
-            <input
-              type="date"
-              className="input-base"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <label className="label-base">Start date</label>
+            <input type="date" className="input-base" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
-
           <div>
-            <label className="label-base">End Date</label>
-            <input
-              type="date"
-              className="input-base"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+            <label className="label-base">End date</label>
+            <input type="date" className="input-base" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {events.length === 0 ? (
-          <div className="col-span-3 text-center py-12 text-slate-400">No events found.</div>
+          <div className="card col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-lg font-medium text-slate-700">No events match your filters right now.</p>
+            <p className="mt-2 max-w-md text-sm text-slate-500">Try expanding the search or explore the full event list later.</p>
+          </div>
         ) : (
-          events.map(event => (
-            <div key={event.id} className="card-hover overflow-hidden group">
+          events.map((event) => (
+            <div key={event.id} className="card-hover overflow-hidden">
               {event.banner_url ? (
-                <img
-                  src={`http://localhost:5000${event.banner_url}`}
-                  alt={event.title}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                <img src={`http://localhost:5000${event.banner_url}`} alt={event.title} className="h-48 w-full object-cover transition duration-300 group-hover:scale-105" />
               ) : (
-                <div className="w-full h-48 bg-slate-900 flex items-center justify-center text-slate-500 font-bold">
-                  NO IMAGE
-                </div>
+                <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">No image</div>
               )}
               <div className="p-6">
-                <span className="badge-primary text-xs mb-3 inline-block">
-                  {event.type}
-                </span>
-                <h3 className="text-xl font-bold text-slate-100 line-clamp-1 mb-2 group-hover:text-slate-100 transition-colors duration-200">
-                  <Link to={`/event/${event.id}`}>{event.title}</Link>
-                </h3>
-                <p className="text-slate-400 text-sm line-clamp-2 mb-4">{event.description}</p>
-                <div className="flex items-center text-slate-400 text-sm space-x-4 mb-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1.5 text-slate-300" />
-                    <span>{new Date(event.start_date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1.5 text-slate-300" />
-                    <span className="line-clamp-1">{event.location || 'Online'}</span>
-                  </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="badge-primary">{event.type}</span>
+                  <span className="text-xs font-medium text-slate-500">Capacity {event.capacity}</span>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {Array.isArray(event.tags) && event.tags.map((t, idx) => (
-                    <span key={idx} className="badge-outline text-xs">
-                      #{t}
-                    </span>
-                  ))}
+                <h3 className="mb-2 text-xl font-semibold text-slate-900"><Link to={`/event/${event.id}`} className="transition hover:text-indigo-600">{event.title}</Link></h3>
+                <p className="mb-4 line-clamp-2 text-sm text-slate-600">{event.description}</p>
+                <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-indigo-500" /><span>{new Date(event.start_date).toLocaleDateString()}</span></div>
+                  <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-indigo-500" /><span className="line-clamp-1">{event.location || 'Online'}</span></div>
                 </div>
-                <Link
-                  to={`/event/${event.id}`}
-                  className="block text-center w-full bg-slate-700/50 border border-slate-600 hover:bg-slate-700 hover:border-slate-600 hover:text-white text-slate-200 font-medium py-2 rounded-lg transition-colors duration-200 text-sm"
-                >
-                  View Details
-                </Link>
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {Array.isArray(event.tags) && event.tags.map((t, idx) => (<span key={idx} className="badge-outline">#{t}</span>))}
+                </div>
+                <Link to={`/event/${event.id}`} className="btn-outline w-full">View details</Link>
               </div>
             </div>
           ))

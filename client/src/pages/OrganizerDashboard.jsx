@@ -83,173 +83,84 @@ export default function OrganizerDashboard() {
   };
 
   if (loading) {
-    return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-gray-500">Loading dashboard...</div>;
+    return <div className="page-shell flex min-h-[50vh] items-center justify-center py-16"><div className="card px-8 py-6 text-center"><div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" /><p className="text-sm font-medium text-slate-600">Loading dashboard…</p></div></div>;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="page-shell py-8 sm:py-10">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Organizer Dashboard</h1>
-          <p className="mt-2 text-gray-600">Track registrations, manage capacity, and execute attendee check-ins.</p>
+          <h1 className="page-title">Organizer dashboard</h1>
+          <p className="page-subtitle">Track registrations, monitor capacity, and keep check-ins moving smoothly.</p>
         </div>
         {selectedEventId && (
-          <Link
-            to={`/checkin/${selectedEventId}`}
-            className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
-          >
+          <Link to={`/checkin/${selectedEventId}`} className="btn-primary flex items-center gap-2 self-start">
             <ScanLine className="h-5 w-5" />
-            <span>Launch Check-in Scanner</span>
+            <span>Launch check-in scanner</span>
           </Link>
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-8">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Select Event to Manage</label>
-        <select
-          className="w-full md:max-w-md border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-        >
-          {events.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.title} ({e.status})
-            </option>
-          ))}
+      <div className="card mb-8 p-5 sm:p-6">
+        <label className="label-base">Select event to manage</label>
+        <select className="select-base max-w-xl" value={selectedEventId} onChange={(e) => setSelectedEventId(e.target.value)}>
+          {events.map((e) => <option key={e.id} value={e.id}>{e.title} ({e.status})</option>)}
         </select>
       </div>
 
       {statsLoading ? (
-        <div className="text-center py-12 text-gray-500">Updating dashboard stats...</div>
+        <div className="card flex min-h-[220px] items-center justify-center text-sm font-medium text-slate-500">Updating dashboard stats…</div>
       ) : stats ? (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-500 uppercase">Total Registrants</span>
-                <Users className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900">{stats.registrationCount}</div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="card p-6">
+              <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Total registrants</span><Users className="h-6 w-6 text-indigo-500" /></div>
+              <div className="text-3xl font-semibold text-slate-900">{stats.registrationCount}</div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-500 uppercase">Confirmed Seats</span>
-                <CheckSquare className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900">{stats.confirmedCount}</div>
+            <div className="card p-6">
+              <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Confirmed seats</span><CheckSquare className="h-6 w-6 text-emerald-500" /></div>
+              <div className="text-3xl font-semibold text-slate-900">{stats.confirmedCount}</div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-500 uppercase">Waitlist size</span>
-                <ListCollapse className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900">{stats.waitlistCount}</div>
+            <div className="card p-6">
+              <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Waitlist</span><ListCollapse className="h-6 w-6 text-amber-500" /></div>
+              <div className="text-3xl font-semibold text-slate-900">{stats.waitlistCount}</div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-500 uppercase">Checked In</span>
-                <ScanLine className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900">{stats.checkInCount}</div>
+            <div className="card p-6">
+              <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Checked in</span><ScanLine className="h-6 w-6 text-indigo-500" /></div>
+              <div className="text-3xl font-semibold text-slate-900">{stats.checkInCount}</div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between border-b pb-4 border-gray-100 mb-6">
-              <h3 className="text-lg font-bold text-gray-900">Capacity Fill Percentage</h3>
-              <span className="text-indigo-600 font-bold">{stats.capacityFillPercentage}%</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-              <div
-                className="bg-indigo-600 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(stats.capacityFillPercentage, 100)}%` }}
-              ></div>
-            </div>
+          <div className="card p-6">
+            <div className="mb-6 flex items-center justify-between"><h3 className="text-lg font-semibold text-slate-900">Capacity fill</h3><span className="text-lg font-semibold text-indigo-600">{stats.capacityFillPercentage}%</span></div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500" style={{ width: `${Math.min(stats.capacityFillPercentage, 100)}%` }} /></div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900">Attendee List</h3>
-                <button
-                  onClick={handleExportCsv}
-                  className="flex items-center space-x-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Export CSV</span>
-                </button>
-              </div>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <div className="card p-6">
+              <div className="mb-6 flex items-center justify-between"><h3 className="text-lg font-semibold text-slate-900">Attendee list</h3><button onClick={handleExportCsv} className="btn-outline flex items-center gap-2 text-xs"> <Download className="h-4 w-4" /><span>Export CSV</span></button></div>
               <div className="overflow-x-auto">
-                <table className="min-w-full text-sm text-left text-gray-500">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2">Name</th>
-                      <th className="px-4 py-2">Email</th>
-                      <th className="px-4 py-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {registrants.length === 0 ? (
-                      <tr>
-                        <td colSpan="3" className="px-4 py-4 text-center text-gray-400">No attendees yet.</td>
-                      </tr>
-                    ) : (
-                      registrants.map((reg) => (
-                        <React.Fragment key={reg.id}>
-                          <tr>
-                            <td className="px-4 py-3 font-semibold text-gray-800">{reg.user_name}</td>
-                            <td className="px-4 py-3">{reg.user_email}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                                reg.status === 'confirmed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
-                              }`}>{reg.status}</span>
-                            </td>
-                          </tr>
-                          {reg.members && reg.members.map((m, idx) => (
-                            <tr key={`${reg.id}-m-${idx}`} className="bg-gray-50/50">
-                              <td className="px-6 py-2 text-xs text-gray-600">+ {m.name}</td>
-                              <td className="px-4 py-2 text-xs text-gray-600">{m.email}</td>
-                              <td className="px-4 py-2 text-xs text-gray-600">Guest</td>
-                            </tr>
-                          ))}
-                        </React.Fragment>
-                      ))
-                    )}
+                <table className="min-w-full text-sm text-left text-slate-600">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500"><tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Status</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {registrants.length === 0 ? <tr><td colSpan="3" className="px-4 py-6 text-center text-slate-400">No attendees yet.</td></tr> : registrants.map((reg) => (<React.Fragment key={reg.id}><tr><td className="px-4 py-3 font-semibold text-slate-800">{reg.user_name}</td><td className="px-4 py-3">{reg.user_email}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${reg.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{reg.status}</span></td></tr>{reg.members && reg.members.map((m, idx) => (<tr key={`${reg.id}-m-${idx}`} className="bg-slate-50/70"><td className="px-6 py-2 text-xs text-slate-600">+ {m.name}</td><td className="px-4 py-2 text-xs text-slate-600">{m.email}</td><td className="px-4 py-2 text-xs text-slate-600">Guest</td></tr>))}</React.Fragment>))}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Check-Ins</h3>
-              <div className="overflow-y-auto max-h-96">
-                <ul className="divide-y divide-gray-100">
-                  {checkIns.length === 0 ? (
-                    <li className="py-4 text-center text-gray-400 text-sm">No check-ins yet.</li>
-                  ) : (
-                    checkIns.map((ci) => (
-                      <li key={ci.id} className="py-3 flex justify-between items-center text-sm">
-                        <div>
-                          <p className="font-semibold text-gray-800">{ci.attendee_name}</p>
-                          <p className="text-xs text-gray-400">Code: {ci.ticket_code}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500">{new Date(ci.scanned_at).toLocaleTimeString()}</p>
-                          <p className="text-[10px] text-gray-400">Scanner: {ci.scanner_name || 'Admin'}</p>
-                        </div>
-                      </li>
-                    ))
-                  )}
+            <div className="card p-6">
+              <h3 className="mb-6 text-lg font-semibold text-slate-900">Recent check-ins</h3>
+              <div className="max-h-96 overflow-y-auto">
+                <ul className="divide-y divide-slate-100">
+                  {checkIns.length === 0 ? <li className="py-6 text-center text-sm text-slate-400">No check-ins yet.</li> : checkIns.map((ci) => (<li key={ci.id} className="flex items-center justify-between py-3"><div><p className="font-semibold text-slate-800">{ci.attendee_name}</p><p className="text-xs text-slate-500">Code: {ci.ticket_code}</p></div><div className="text-right"><p className="text-xs text-slate-500">{new Date(ci.scanned_at).toLocaleTimeString()}</p><p className="text-[10px] text-slate-400">Scanner: {ci.scanner_name || 'Admin'}</p></div></li>))}
                 </ul>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="text-center py-12 text-gray-500">Select or create an event to see metrics.</div>
+        <div className="card flex min-h-[220px] items-center justify-center text-sm font-medium text-slate-500">Select or create an event to view metrics.</div>
       )}
     </div>
   );

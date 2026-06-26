@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Menu, X, Sparkles } from 'lucide-react';
 import api from '../api';
 
 export default function Navbar() {
@@ -9,6 +9,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -26,12 +27,12 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const markAsRead = async (id) => {
     try {
       await api.put(`/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     } catch (err) {
       console.error(err);
     }
@@ -45,66 +46,62 @@ export default function Navbar() {
   const isOrganizer = user?.roles?.includes('organizer');
   const isAdmin = user?.roles?.includes('admin');
 
-  return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="text-xl font-bold text-indigo-600 tracking-wide">
-              EventSphere
-            </Link>
-            <div className="hidden md:flex space-x-4">
-              <Link to="/" className="text-gray-600 hover:text-indigo-600 font-medium">Home</Link>
-              <Link to="/events" className="text-gray-600 hover:text-indigo-600 font-medium">Events</Link>
-              {user && !isOrganizer && !isAdmin && (
-                <Link to="/tickets" className="text-gray-600 hover:text-indigo-600 font-medium">My Tickets</Link>
-              )}
-              {user && isOrganizer && !isAdmin && (
-                <Link to="/dashboard" className="text-gray-600 hover:text-indigo-600 font-medium">Organizer Dashboard</Link>
-              )}
-              {user && isAdmin && (
-                <Link to="/admin" className="text-gray-600 hover:text-indigo-600 font-medium">Admin Panel</Link>
-              )}
-            </div>
-          </div>
+  const closeMenu = () => setMobileMenuOpen(false);
 
-          <div className="flex items-center space-x-4">
+  return (
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
+      <div className="page-shell">
+        <div className="flex h-16 items-center justify-between">
+          <Link to="/" className="flex items-center gap-3" onClick={closeMenu}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold tracking-tight text-slate-900">EventSphere</p>
+              <p className="text-xs text-slate-500">Premium event operations</p>
+            </div>
+          </Link>
+
+          <nav className="hidden items-center gap-6 md:flex">
+            <Link to="/" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">Home</Link>
+            <Link to="/events" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">Events</Link>
+            {user && !isOrganizer && !isAdmin && <Link to="/tickets" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">My Tickets</Link>}
+            {user && isOrganizer && !isAdmin && <Link to="/dashboard" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">Organizer Dashboard</Link>}
+            {user && isAdmin && <Link to="/admin" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">Admin Panel</Link>}
+          </nav>
+
+          <div className="flex items-center gap-3">
             {user ? (
               <>
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-1 rounded-full text-gray-400 hover:text-gray-500 relative"
+                    onClick={() => setShowNotifications((prev) => !prev)}
+                    className="relative rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600"
+                    aria-label="Notifications"
                   >
-                    <Bell className="h-6 w-6" />
+                    <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 block h-4 w-4 rounded-full ring-2 ring-white bg-red-500 text-white text-xs font-bold text-center leading-4">
+                      <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
                         {unreadCount}
                       </span>
                     )}
                   </button>
 
                   {showNotifications && (
-                    <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden z-50">
-                      <div className="px-4 py-2 border-b border-gray-100 font-semibold text-gray-700 bg-gray-50">
-                        Notifications
-                      </div>
-                      <div className="max-h-60 overflow-y-auto divide-y divide-gray-100">
+                    <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                      <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">Notifications</div>
+                      <div className="max-h-72 divide-y divide-slate-100 overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <div className="px-4 py-3 text-sm text-gray-500 text-center">No notifications</div>
+                          <div className="px-4 py-4 text-center text-sm text-slate-500">No notifications yet.</div>
                         ) : (
                           notifications.map((n) => (
                             <div
                               key={n.id}
                               onClick={() => !n.is_read && markAsRead(n.id)}
-                              className={`px-4 py-3 text-sm cursor-pointer transition-colors ${
-                                n.is_read ? 'bg-white text-gray-600' : 'bg-indigo-50 text-indigo-900 font-medium'
-                              }`}
+                              className={`cursor-pointer px-4 py-3 text-sm transition ${n.is_read ? 'bg-white text-slate-600' : 'bg-indigo-50 text-indigo-900'}`}
                             >
                               <p className="line-clamp-2">{n.message}</p>
-                              <span className="text-xs text-gray-400 block mt-1">
-                                {new Date(n.created_at).toLocaleDateString()}
-                              </span>
+                              <span className="mt-1 block text-xs text-slate-400">{new Date(n.created_at).toLocaleDateString()}</span>
                             </div>
                           ))
                         )}
@@ -113,26 +110,47 @@ export default function Navbar() {
                   )}
                 </div>
 
-                <div className="flex items-center space-x-2 border-l pl-4 border-gray-200">
-                  <UserIcon className="h-5 w-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">{user.name}</span>
-                  <button
-                    onClick={handleLogout}
-                    className="p-1 rounded-full text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <LogOut className="h-5 w-5" />
+                <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 sm:flex">
+                  <UserIcon className="h-4 w-4 text-slate-500" />
+                  <span className="text-sm font-medium text-slate-700">{user.name}</span>
+                  <button onClick={handleLogout} className="rounded-full p-1.5 text-slate-500 transition hover:bg-white hover:text-rose-500" aria-label="Logout">
+                    <LogOut className="h-4 w-4" />
                   </button>
                 </div>
               </>
             ) : (
-              <div className="space-x-4">
-                <Link to="/login" className="text-gray-600 hover:text-indigo-600 font-medium">Login</Link>
-                <Link to="/signup" className="bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors">Sign Up</Link>
+              <div className="hidden items-center gap-3 sm:flex">
+                <Link to="/login" className="text-sm font-medium text-slate-600 transition hover:text-indigo-600">Login</Link>
+                <Link to="/signup" className="btn-primary">Sign Up</Link>
               </div>
             )}
+
+            <button className="rounded-2xl p-2 text-slate-600 transition hover:bg-slate-100 md:hidden" onClick={() => setMobileMenuOpen((prev) => !prev)} aria-label="Toggle navigation">
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-lg md:hidden">
+            <div className="flex flex-col gap-3">
+              <Link to="/" onClick={closeMenu} className="rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600">Home</Link>
+              <Link to="/events" onClick={closeMenu} className="rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600">Events</Link>
+              {user && !isOrganizer && !isAdmin && <Link to="/tickets" onClick={closeMenu} className="rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600">My Tickets</Link>}
+              {user && isOrganizer && !isAdmin && <Link to="/dashboard" onClick={closeMenu} className="rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600">Organizer Dashboard</Link>}
+              {user && isAdmin && <Link to="/admin" onClick={closeMenu} className="rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600">Admin Panel</Link>}
+              {!user ? (
+                <div className="flex gap-2 pt-2">
+                  <Link to="/login" onClick={closeMenu} className="btn-outline w-full justify-center">Login</Link>
+                  <Link to="/signup" onClick={closeMenu} className="btn-primary w-full justify-center">Sign Up</Link>
+                </div>
+              ) : (
+                <button onClick={() => { handleLogout(); closeMenu(); }} className="btn-outline w-full justify-center">Logout</button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </nav>
+    </header>
   );
 }

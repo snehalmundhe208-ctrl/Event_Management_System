@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { UserPlus, Sparkles } from 'lucide-react';
 
 export default function Signup() {
   const { signup } = useContext(AuthContext);
@@ -10,10 +11,12 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     try {
       const roles = ['attendee'];
       if (isOrganizer) {
@@ -23,88 +26,60 @@ export default function Signup() {
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Signup failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow border border-gray-100">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create a new account</h2>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(79,70,229,0.18),_transparent_35%),linear-gradient(135deg,_#eef2ff_0%,_#f8fafc_100%)] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.45)] lg:flex-row">
+        <div className="flex-1 bg-slate-900 p-8 text-white sm:p-10 lg:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-slate-200">
+            <Sparkles className="h-4 w-4 text-indigo-300" />
+            Start with a strong foundation
+          </div>
+          <h1 className="mt-8 text-3xl font-semibold leading-tight sm:text-4xl">Create your account and unlock the full event workflow.</h1>
+          <p className="mt-4 max-w-md text-base text-slate-300 sm:text-lg">Join as an attendee or organizer and move seamlessly from discovery to registration and check-in.</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative text-sm">
-              {error}
+
+        <div className="flex-1 p-8 sm:p-10 lg:p-12">
+          <div className="mx-auto max-w-md">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <h2 className="text-3xl font-semibold text-slate-900">Create an account</h2>
+              <p className="mt-2 text-sm text-slate-500">A thoughtful sign-up experience for every role.</p>
             </div>
-          )}
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="full-name" className="sr-only">Full Name</label>
-              <input
-                id="full-name"
-                name="name"
-                type="text"
-                required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={6}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Password (min 6 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                id="roles"
-                name="roles"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                checked={isOrganizer}
-                onChange={(e) => setIsOrganizer(e.target.checked)}
-              />
-              <label htmlFor="roles" className="text-sm font-medium text-gray-700">
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && <div className="alert-error">{error}</div>}
+              <div>
+                <label htmlFor="full-name" className="label-base">Full name</label>
+                <input id="full-name" name="name" type="text" required className="input-base" placeholder="Alex Morgan" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="email-address" className="label-base">Email address</label>
+                <input id="email-address" name="email" type="email" required className="input-base" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="password" className="label-base">Password</label>
+                <input id="password" name="password" type="password" required minLength={6} className="input-base" placeholder="Minimum 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <input id="roles" name="roles" type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked={isOrganizer} onChange={(e) => setIsOrganizer(e.target.checked)} />
                 I want to organize events as well
               </label>
+              <button type="submit" disabled={isLoading} className="btn-primary w-full py-3">
+                {isLoading ? 'Creating account...' : 'Create account'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center text-sm text-slate-500">
+              Already have an account? <Link to="/login" className="font-semibold text-indigo-600 transition hover:text-indigo-700">Sign in</Link>
             </div>
           </div>
-
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Sign Up
-            </button>
-          </div>
-        </form>
-        <div className="text-center text-sm text-gray-600">
-          Already have an account? <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Sign In</Link>
         </div>
       </div>
     </div>

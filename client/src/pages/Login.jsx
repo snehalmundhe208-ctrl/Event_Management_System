@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -26,84 +26,53 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="max-w-md w-full space-y-8 card p-8 relative z-10">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-slate-700 rounded-xl">
-              <LogIn className="h-8 w-8 text-slate-100" />
-            </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_35%),linear-gradient(135deg,_#eef2ff_0%,_#f8fafc_100%)] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.45)] lg:flex-row">
+        <div className="flex-1 bg-slate-950 p-8 text-white sm:p-10 lg:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-slate-200">
+            <Sparkles className="h-4 w-4 text-indigo-300" />
+            Secure attendee and organizer access
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-slate-100">Welcome Back</h2>
-          <p className="mt-2 text-center text-slate-400">Sign in to access your events</p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="alert-error">
-              {error}
+          <h1 className="mt-8 text-3xl font-semibold leading-tight sm:text-4xl">Welcome back to a more polished event experience.</h1>
+          <p className="mt-4 max-w-md text-base text-slate-300 sm:text-lg">Manage tickets, scan check-ins, and track every detail from one streamlined dashboard.</p>
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-5 text-sm text-slate-200">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-indigo-300" />
+              <p>Protected sessions, clear activity feedback, and a consistent experience across every page.</p>
             </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email-address" className="label-base">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                required
-                className="input-base"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="label-base">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="input-base"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full flex justify-center items-center space-x-2 text-base py-3"
-            >
-              <LogIn className="h-5 w-5" />
-              <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
-            </button>
-          </div>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-700" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-slate-800 text-slate-400">New here?</span>
           </div>
         </div>
 
-        <Link
-          to="/signup"
-          className="btn-outline w-full flex justify-center"
-        >
-          Create an account
-        </Link>
+        <div className="flex-1 p-8 sm:p-10 lg:p-12">
+          <div className="mx-auto max-w-md">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+                <LogIn className="h-6 w-6" />
+              </div>
+              <h2 className="text-3xl font-semibold text-slate-900">Sign in</h2>
+              <p className="mt-2 text-sm text-slate-500">Continue with your existing account.</p>
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && <div className="alert-error">{error}</div>}
+              <div>
+                <label htmlFor="email-address" className="label-base">Email address</label>
+                <input id="email-address" name="email" type="email" required className="input-base" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} />
+              </div>
+              <div>
+                <label htmlFor="password" className="label-base">Password</label>
+                <input id="password" name="password" type="password" required className="input-base" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
+              </div>
+              <button type="submit" disabled={isLoading} className="btn-primary w-full py-3">
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center text-sm text-slate-500">
+              New here? <Link to="/signup" className="font-semibold text-indigo-600 transition hover:text-indigo-700">Create an account</Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

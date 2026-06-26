@@ -74,88 +74,59 @@ export default function RegistrationFlow() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <button
-        onClick={() => navigate(`/event/${id}`)}
-        className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 mb-6 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1.5" />
-        Back to Event
+    <div className="page-shell py-8 sm:py-10">
+      <button onClick={() => navigate(`/event/${id}`)} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-indigo-600">
+        <ArrowLeft className="h-4 w-4" />
+        Back to event
       </button>
 
-      <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Register for Event</h2>
-        <h3 className="text-lg font-semibold text-indigo-600 mb-6">{event.title}</h3>
+      <div className="card p-6 sm:p-8">
+        <div className="mb-6 flex flex-col gap-2">
+          <h2 className="text-2xl font-semibold text-slate-900">Register for event</h2>
+          <h3 className="text-lg font-semibold text-indigo-600">{event.title}</h3>
+        </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative text-sm mb-6">
-            {error}
-          </div>
-        )}
+        {error && <div className="alert-error mb-6">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-            <h4 className="font-semibold text-gray-800 text-sm mb-1">Primary Attendee</h4>
-            <p className="text-gray-500 text-xs">Your profile details will be registered as the main attendee.</p>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <h4 className="text-sm font-semibold text-slate-800">Primary attendee</h4>
+            <p className="mt-1 text-sm text-slate-500">Your profile information will be used as the main registration entry.</p>
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h4 className="text-sm font-bold text-gray-800 flex items-center">
-                <Users className="h-4 w-4 mr-1.5 text-indigo-600" />
-                Additional Team Members (Optional)
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <Users className="h-4 w-4 text-indigo-600" />
+                Additional team members (optional)
               </h4>
-              <button
-                type="button"
-                onClick={handleAddMember}
-                className="flex items-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded transition-colors"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Member
+              <button type="button" onClick={handleAddMember} className="btn-outline flex items-center gap-2 self-start">
+                <Plus className="h-4 w-4" />
+                Add member
               </button>
             </div>
 
             {members.map((member, idx) => (
-              <div key={idx} className="flex gap-4 items-center bg-gray-50 p-4 rounded-md border border-gray-200 relative">
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div key={idx} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Name</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm"
-                      value={member.name}
-                      onChange={(e) => handleMemberChange(idx, 'name', e.target.value)}
-                    />
+                    <label className="label-base">Name</label>
+                    <input type="text" required className="input-base" value={member.name} onChange={(e) => handleMemberChange(idx, 'name', e.target.value)} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email</label>
-                    <input
-                      type="email"
-                      required
-                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm"
-                      value={member.email}
-                      onChange={(e) => handleMemberChange(idx, 'email', e.target.value)}
-                    />
+                    <label className="label-base">Email</label>
+                    <input type="email" required className="input-base" value={member.email} onChange={(e) => handleMemberChange(idx, 'email', e.target.value)} />
                   </div>
+                  <button type="button" onClick={() => handleRemoveMember(idx)} className="flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 transition hover:bg-rose-100" aria-label="Remove member">
+                    <Trash2 className="h-5 w-5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveMember(idx)}
-                  className="text-red-500 hover:text-red-600 transition-colors p-1.5 mt-5"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
               </div>
             ))}
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded transition-colors disabled:opacity-50 text-sm"
-          >
-            {submitting ? 'Registering...' : 'Confirm Registration'}
+          <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
+            {submitting ? 'Registering…' : 'Confirm registration'}
           </button>
         </form>
       </div>
