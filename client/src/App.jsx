@@ -24,8 +24,8 @@ function ProtectedRoute({ children, allowedRoles }) {
     return (
       <div className="page-shell flex min-h-[50vh] items-center justify-center py-16">
         <div className="card px-8 py-6 text-center">
-          <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
-          <p className="text-sm font-medium text-slate-600">Verifying your session...</p>
+          <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-primary/15 border-t-primary" />
+          <p className="text-sm font-medium text-muted">Verifying your session...</p>
         </div>
       </div>
     );
@@ -47,7 +47,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 
 function MainLayout({ children }) {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-bg text-ink">
       <Navbar />
       <main className="flex-1 w-full">{children}</main>
       <Footer />

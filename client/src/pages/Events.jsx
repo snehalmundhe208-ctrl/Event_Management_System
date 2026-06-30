@@ -133,9 +133,9 @@ export default function Events() {
       </div>
 
       <div className="card mb-8 p-5 sm:p-6">
-        <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-sm">
-          <Search className="mr-2 h-5 w-5 text-slate-400" />
-          <input type="text" placeholder="Search by keyword..." className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+        <div className="flex items-center rounded-2xl border border-border bg-bg-soft px-4 py-2.5 shadow-sm transition-all duration-300 focus-within:-translate-y-0.5 focus-within:border-primary/35 focus-within:bg-surface focus-within:ring-4 focus-within:ring-primary/10">
+          <Search className="mr-2 h-5 w-5 text-primary" />
+          <input type="text" placeholder="Search by keyword..." className="w-full border-none bg-transparent text-sm text-ink outline-none placeholder:text-muted/70" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -176,27 +176,30 @@ export default function Events() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {events.length === 0 ? (
           <div className="card col-span-full flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-lg font-medium text-slate-700">No events match your filters right now.</p>
-            <p className="mt-2 max-w-md text-sm text-slate-500">Try expanding the search or explore the full event list later.</p>
+            <p className="text-lg font-medium text-ink">No events match your filters right now.</p>
+            <p className="mt-2 max-w-md text-sm text-muted">Try expanding the search or explore the full event list later.</p>
           </div>
         ) : (
           events.map((event) => (
-            <div key={event.id} className="card-hover overflow-hidden">
+            <div key={event.id} className="group card-hover entrance-card">
               {event.banner_url ? (
-                <img src={`http://localhost:5000${event.banner_url}`} alt={event.title} className="h-48 w-full object-cover transition duration-300 group-hover:scale-105" />
+                <div className="image-zoom-shell relative h-48 w-full">
+                  <img src={`http://localhost:5000${event.banner_url}`} alt={event.title} className="image-zoom h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-primary/10" />
+                </div>
               ) : (
-                <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">No image</div>
+                <div className="flex h-48 w-full items-center justify-center bg-bg-soft text-sm font-semibold uppercase tracking-[0.2em] text-muted">No image</div>
               )}
               <div className="p-6">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="badge-primary">{event.type}</span>
-                  <span className="text-xs font-medium text-slate-500">Capacity {event.capacity}</span>
+                  <span className="text-xs font-medium text-muted">Capacity {event.capacity}</span>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-slate-900"><Link to={`/event/${event.id}`} className="transition hover:text-indigo-600">{event.title}</Link></h3>
-                <p className="mb-4 line-clamp-2 text-sm text-slate-600">{event.description}</p>
-                <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-indigo-500" /><span>{new Date(event.start_date).toLocaleDateString()}</span></div>
-                  <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-indigo-500" /><span className="line-clamp-1">{event.location || 'Online'}</span></div>
+                <h3 className="mb-2 text-xl font-semibold text-ink"><Link to={`/event/${event.id}`} className="transition hover:text-primary">{event.title}</Link></h3>
+                <p className="mb-4 line-clamp-2 text-sm text-muted">{event.description}</p>
+                <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted">
+                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /><span>{new Date(event.start_date).toLocaleDateString()}</span></div>
+                  <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-accent" /><span className="line-clamp-1">{event.location || 'Online'}</span></div>
                 </div>
                 <div className="mb-5 flex flex-wrap gap-2">
                   {Array.isArray(event.tags) && event.tags.map((t, idx) => (<span key={idx} className="badge-outline">#{t}</span>))}
@@ -213,11 +216,11 @@ export default function Events() {
           <div className="modal-content w-full max-w-2xl" onClick={e => e.stopPropagation()}>
             <button
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors"
+              className="absolute top-4 right-4 text-muted hover:text-primary transition-colors"
             >
               <X className="h-6 w-6" />
             </button>
-            <h3 className="text-2xl font-bold text-slate-100 mb-6">Create Event (Draft)</h3>
+            <h3 className="text-2xl font-bold text-ink mb-6">Create Event (Draft)</h3>
             <form onSubmit={handleCreateEvent} className="space-y-4 max-h-[70vh] overflow-y-auto">
               {createError && (
                 <div className="alert-error">
@@ -315,11 +318,11 @@ export default function Events() {
                   <input
                     type="file"
                     accept="image/*"
-                    className="input-base file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-800 file:text-slate-100 hover:file:bg-slate-700"
+                    className="input-base file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
                     onChange={(e) => setNewBannerFile(e.target.files[0])}
                   />
                   {newBannerFile && (
-                    <p className="mt-2 text-xs text-slate-400">Selected: {newBannerFile.name}</p>
+                    <p className="mt-2 text-xs text-muted">Selected: {newBannerFile.name}</p>
                   )}
                 </div>
                 <div className="col-span-2">
@@ -342,7 +345,7 @@ export default function Events() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-slate-700">
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}

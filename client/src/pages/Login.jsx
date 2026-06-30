@@ -26,18 +26,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_35%),linear-gradient(135deg,_#eef2ff_0%,_#f8fafc_100%)] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_32px_100px_-40px_rgba(15,23,42,0.45)] lg:flex-row">
-        <div className="flex-1 bg-slate-950 p-8 text-white sm:p-10 lg:p-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-slate-200">
-            <Sparkles className="h-4 w-4 text-indigo-300" />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(93,56,145,0.14),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(247,148,29,0.16),_transparent_28%),linear-gradient(180deg,_#EDE3E3_0%,_#F5F4F4_100%)] px-4 py-10 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="mx-auto flex max-w-6xl w-full flex-col overflow-hidden rounded-[32px] border border-border bg-surface shadow-[0_24px_70px_-34px_rgba(93,56,145,0.22)] lg:flex-row">
+        <div className="flex-1 bg-primary p-8 text-white sm:p-10 lg:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-white/90">
+            <Sparkles className="h-4 w-4 text-accent" />
             Secure attendee and organizer access
           </div>
           <h1 className="mt-8 text-3xl font-semibold leading-tight sm:text-4xl">Welcome back to a more polished event experience.</h1>
-          <p className="mt-4 max-w-md text-base text-slate-300 sm:text-lg">Manage tickets, scan check-ins, and track every detail from one streamlined dashboard.</p>
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-5 text-sm text-slate-200">
+          <p className="mt-4 max-w-md text-base text-white/80 sm:text-lg">Manage tickets, scan check-ins, and track every detail from one streamlined dashboard.</p>
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-5 text-sm text-white/90">
             <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-5 w-5 text-indigo-300" />
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-accent" />
               <p>Protected sessions, clear activity feedback, and a consistent experience across every page.</p>
             </div>
           </div>
@@ -45,12 +45,12 @@ export default function Login() {
 
         <div className="flex-1 p-8 sm:p-10 lg:p-12">
           <div className="mx-auto max-w-md">
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+            <div className="mb-8 text-center animate-soft-pop">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_16px_32px_-18px_rgba(93,56,145,0.72)] transition-transform duration-300 hover:rotate-6">
                 <LogIn className="h-6 w-6" />
               </div>
-              <h2 className="text-3xl font-semibold text-slate-900">Sign in</h2>
-              <p className="mt-2 text-sm text-slate-500">Continue with your existing account.</p>
+              <h2 className="text-3xl font-semibold text-ink">Sign in</h2>
+              <p className="mt-2 text-sm text-muted">Continue with your existing account.</p>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
@@ -68,8 +68,8 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-slate-500">
-              New here? <Link to="/signup" className="font-semibold text-indigo-600 transition hover:text-indigo-700">Create an account</Link>
+            <div className="mt-6 text-center text-sm text-muted">
+              New here? <Link to="/signup" className="font-semibold text-primary transition-all duration-300 hover:text-primary/80">Create an account</Link>
             </div>
           </div>
         </div>

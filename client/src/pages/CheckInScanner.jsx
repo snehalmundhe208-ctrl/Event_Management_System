@@ -85,35 +85,35 @@ export default function CheckInScanner() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8 fade-in-section">
       <button
         onClick={() => navigate('/dashboard')}
-        className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 mb-6 transition-colors"
+        className="mb-6 inline-flex items-center text-sm font-medium text-muted transition-all duration-300 hover:-translate-x-0.5 hover:text-primary"
       >
         <ArrowLeft className="h-4 w-4 mr-1.5" />
         Back to Dashboard
       </button>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-6">
+      <div className="card entrance-card space-y-6 p-6">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900">Check-In Scanner</h2>
-          <p className="mt-1 text-sm text-gray-600">Scan attendee QR ticket code or type ticket code manually.</p>
+          <h2 className="text-2xl font-extrabold text-ink">Check-In Scanner</h2>
+          <p className="mt-1 text-sm text-muted">Scan attendee QR ticket code or type ticket code manually.</p>
         </div>
 
         {status === 'success' && (
-          <div className="bg-green-50 border border-green-200 rounded-md p-4 flex items-start space-x-3 text-green-900">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start space-x-3 rounded-2xl border border-success/20 bg-success/10 p-4 text-success">
+            <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
             <div>
               <p className="font-bold text-sm">Check-in Successful!</p>
               <p className="text-sm font-medium mt-1">Attendee: {attendee}</p>
-              <p className="text-xs text-green-700 mt-1">{message}</p>
+              <p className="mt-1 text-xs text-success">{message}</p>
             </div>
           </div>
         )}
 
         {status === 'error' && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start space-x-3 text-red-900">
-            <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start space-x-3 rounded-2xl border border-danger/20 bg-danger/10 p-4 text-danger">
+            <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-danger" />
             <div>
               <p className="font-bold text-sm">Check-in Failed</p>
               <p className="text-sm mt-1">{message}</p>
@@ -121,27 +121,27 @@ export default function CheckInScanner() {
           </div>
         )}
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 p-6 flex flex-col items-center">
-          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-            <Video className="h-4 w-4 text-indigo-600" />
+        <div className="flex flex-col items-center overflow-hidden rounded-[26px] border border-border bg-bg-soft p-6">
+          <div className="mb-4 flex items-center space-x-2 text-sm text-muted">
+            <Video className="h-4 w-4 text-primary" />
             <span>Active Camera Scanner</span>
           </div>
-          <div id="qr-reader" className="w-full max-w-sm rounded overflow-hidden shadow-inner border border-gray-300"></div>
+          <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-[22px] border border-border bg-surface shadow-inner"></div>
         </div>
 
-        <form onSubmit={handleManualCheckIn} className="pt-6 border-t border-gray-200 space-y-3">
-          <h3 className="text-sm font-bold text-gray-700">Manual Check-In</h3>
+        <form onSubmit={handleManualCheckIn} className="space-y-3 border-t border-border pt-6">
+          <h3 className="text-sm font-bold text-ink">Manual Check-In</h3>
           <div className="flex gap-4">
             <input
               type="text"
               placeholder="Enter Ticket Code (e.g. TIC-XXXXXXXX)"
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="input-base flex-1"
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
             />
             <button
               type="submit"
-              className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition-colors"
+              className="btn-primary"
             >
               <Send className="h-4 w-4 mr-1.5" />
               <span>Verify Code</span>

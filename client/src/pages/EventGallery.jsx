@@ -78,14 +78,14 @@ export default function EventGallery() {
   };
 
   if (loading) {
-    return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-gray-500">Loading gallery...</div>;
+    return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-muted">Loading gallery...</div>;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 fade-in-section">
       <button
         onClick={() => navigate(`/event/${eventId}`)}
-        className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 mb-6 transition-colors"
+        className="mb-6 inline-flex items-center text-sm font-medium text-muted transition-all duration-300 hover:-translate-x-0.5 hover:text-primary"
       >
         <ArrowLeft className="h-4 w-4 mr-1.5" />
         Back to Event
@@ -93,12 +93,12 @@ export default function EventGallery() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Event Gallery</h1>
-          <p className="mt-2 text-gray-600">Shared memories from: <span className="font-semibold text-indigo-600">{event?.title}</span></p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink">Event Gallery</h1>
+          <p className="mt-2 text-muted">Shared memories from: <span className="font-semibold text-primary">{event?.title}</span></p>
         </div>
         {isCheckedIn && (
           <div className="flex items-center space-x-3">
-            <label className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium text-sm cursor-pointer transition-colors">
+            <label className="btn-primary cursor-pointer">
               <Upload className="h-4 w-4" />
               <span>Upload Photo</span>
               <input
@@ -109,37 +109,37 @@ export default function EventGallery() {
                 disabled={uploading}
               />
             </label>
-            {uploading && <span className="text-sm text-gray-500">Uploading...</span>}
+            {uploading && <span className="text-sm text-muted">Uploading...</span>}
           </div>
         )}
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100 text-gray-500">
-          <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <div className="card entrance-card py-16 text-center text-muted">
+          <ImageIcon className="mx-auto mb-4 h-12 w-12 text-primary/30" />
           <p>No photos have been uploaded to this gallery yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 group flex flex-col justify-between">
-              <div className="relative">
+            <div key={item.id} className="card-hover entrance-card group flex flex-col justify-between overflow-hidden rounded-[24px]">
+              <div className="relative image-zoom-shell">
                 <img
                   src={`http://localhost:5000${item.photo_url}`}
                   alt="Gallery content"
-                  className="w-full h-56 object-cover"
+                  className="image-zoom h-56 w-full object-cover"
                 />
               </div>
-              <div className="p-4 flex items-center justify-between border-t border-gray-50">
-                <span className="text-xs font-semibold text-gray-500 truncate max-w-[65%]">
+              <div className="flex items-center justify-between border-t border-border/60 p-4">
+                <span className="max-w-[65%] truncate text-xs font-semibold text-muted">
                   By: {item.user_name}
                 </span>
                 <button
                   onClick={() => handleLikeItem(item.id)}
-                  className="flex items-center space-x-1.5 text-red-500 hover:scale-105 transition-transform"
+                  className="flex items-center space-x-1.5 text-danger transition-all duration-300 hover:scale-105"
                 >
                   <Heart className={`h-4 w-4 ${item.is_liked ? 'fill-current' : ''}`} />
-                  <span className="text-xs font-bold text-gray-700">{item.likes_count}</span>
+                  <span className="text-xs font-bold text-ink">{item.likes_count}</span>
                 </button>
               </div>
             </div>

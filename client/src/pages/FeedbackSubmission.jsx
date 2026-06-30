@@ -48,52 +48,52 @@ export default function FeedbackSubmission() {
   };
 
   if (loading) {
-    return <div className="max-w-md mx-auto px-4 py-12 text-center text-gray-500">Loading form...</div>;
+    return <div className="max-w-md mx-auto px-4 py-12 text-center text-muted">Loading form...</div>;
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-md mx-auto px-4 py-8 sm:px-6 lg:px-8 fade-in-section">
       <button
         onClick={() => navigate(`/event/${eventId}`)}
-        className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 mb-6 transition-colors"
+        className="mb-6 inline-flex items-center text-sm font-medium text-muted transition-all duration-300 hover:-translate-x-0.5 hover:text-primary"
       >
         <ArrowLeft className="h-4 w-4 mr-1.5" />
         Back to Event
       </button>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-6">
+      <div className="card entrance-card space-y-6 p-6">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900">Event Feedback</h2>
-          <p className="mt-1 text-sm text-gray-600">Share your thoughts on: <span className="font-semibold text-indigo-600">{event?.title}</span></p>
+          <h2 className="text-2xl font-extrabold text-ink">Event Feedback</h2>
+          <p className="mt-1 text-sm text-muted">Share your thoughts on: <span className="font-semibold text-primary">{event?.title}</span></p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative text-sm">
+          <div className="alert-error">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-semibold text-gray-700">Rating:</span>
+            <span className="text-sm font-semibold text-ink">Rating:</span>
             {[1, 2, 3, 4, 5].map((val) => (
               <button
                 type="button"
                 key={val}
                 onClick={() => setRating(val)}
-                className="p-0.5 text-yellow-400 hover:scale-110 transition-transform"
+                className="p-0.5 text-accent transition-transform duration-300 hover:scale-110"
               >
-                <Star className={`h-8 w-8 ${val <= rating ? 'fill-current' : 'text-gray-300'}`} />
+                <Star className={`h-8 w-8 ${val <= rating ? 'fill-current' : 'text-border'}`} />
               </button>
             ))}
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Your Comment (Optional)</label>
+            <label className="mb-1 block text-sm font-semibold text-ink">Your Comment (Optional)</label>
             <textarea
               rows={4}
               placeholder="Tell us what you liked or how we can improve..."
-              className="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="textarea-base"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
@@ -102,7 +102,7 @@ export default function FeedbackSubmission() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded transition-colors disabled:opacity-50 text-sm"
+            className="btn-primary w-full disabled:opacity-50"
           >
             {submitting ? 'Submitting...' : 'Submit Feedback'}
           </button>

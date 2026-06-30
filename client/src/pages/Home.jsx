@@ -62,35 +62,35 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-slate-950 min-h-screen text-slate-100 overflow-hidden">
+    <div className="min-h-screen overflow-hidden bg-transparent text-ink">
       {/* Hero Section */}
-      <section className="relative bg-slate-950 text-slate-100 py-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative px-4 py-24 text-ink sm:px-6 lg:px-8 fade-in-section">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center space-x-2 bg-slate-900 border border-slate-700 px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold text-slate-300 mb-8">
-            <Sparkles className="h-4 w-4 text-slate-400" />
+          <div className="mb-8 inline-flex items-center space-x-2 rounded-full border border-primary/15 bg-surface/80 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm sm:text-sm">
+            <Sparkles className="h-4 w-4 text-accent" />
             <span>Next-Generation Event Operations & Tracking</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none mb-6 text-slate-100">
+          <h1 className="mb-6 text-4xl font-extrabold leading-none tracking-tight text-ink sm:text-6xl">
             Experience Events Like <br className="hidden sm:block" />
-            <span className="text-slate-100">
+            <span className="text-primary">
               Never Before
             </span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-slate-300 text-base sm:text-xl mb-12 font-light leading-relaxed">
+          <p className="mx-auto mb-12 max-w-2xl text-base font-light leading-relaxed text-muted sm:text-xl">
             Discover workshops, organize conferences, manage digital ticketing, track real-time attendance, and issue certificates — all in one premium platform.
           </p>
 
           {/* Quick-Search Glassmorphic Bar */}
-          <div className="max-w-4xl mx-auto bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-700">
+          <div className="mx-auto max-w-4xl rounded-[30px] border border-border bg-surface/88 p-4 shadow-[0_28px_80px_-40px_rgba(93,56,145,0.24)] backdrop-blur-sm sm:p-6 entrance-card">
             <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="flex items-center bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-slate-200">
-                <Search className="h-5 w-5 text-slate-300 mr-2 flex-shrink-0" />
+              <div className="flex items-center rounded-2xl border border-border bg-bg-soft px-4 py-2.5 text-ink shadow-sm transition-all duration-300 focus-within:-translate-y-0.5 focus-within:border-primary/40 focus-within:bg-surface focus-within:ring-4 focus-within:ring-primary/10">
+                <Search className="mr-2 h-5 w-5 flex-shrink-0 text-primary" />
                 <input
                   type="text"
                   placeholder="Event keyword..."
-                  className="bg-transparent border-none outline-none w-full text-sm placeholder-slate-500 focus:ring-0"
+                  className="w-full border-none bg-transparent text-sm text-ink outline-none placeholder:text-muted/70 focus:ring-0"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                 />
@@ -137,20 +137,20 @@ export default function Home() {
       </section>
 
       {/* Featured / Upcoming Events Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 fade-in-section">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-slate-400 font-bold text-sm uppercase tracking-wider mb-2">
-              <TrendingUp className="h-4 w-4 text-slate-300" />
+            <div className="mb-2 flex items-center space-x-2 text-sm font-bold uppercase tracking-wider text-primary">
+              <TrendingUp className="h-4 w-4 text-accent" />
               <span>Happening Soon</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight">
+            <h2 className="text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">
               Featured Events
             </h2>
           </div>
           <Link
             to="/events"
-            className="group flex items-center space-x-1.5 text-slate-300 font-semibold hover:text-slate-100 transition-colors duration-200"
+            className="group flex items-center space-x-1.5 font-semibold text-muted transition-all duration-300 hover:text-primary"
           >
             <span>Explore all events</span>
             <ChevronRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
@@ -160,12 +160,12 @@ export default function Home() {
         {loadingEvents ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="card h-80" />
+              <div key={n} className="card h-80 animate-pulse" />
             ))}
           </div>
         ) : featuredEvents.length === 0 ? (
-          <div className="text-center py-16 card p-8">
-            <p className="text-slate-400 text-lg mb-4">No upcoming events listed at the moment.</p>
+          <div className="card p-8 py-16 text-center entrance-card">
+            <p className="mb-4 text-lg text-muted">No upcoming events listed at the moment.</p>
             <Link
               to="/events"
               className="btn-primary inline-flex items-center space-x-2"
@@ -178,19 +178,19 @@ export default function Home() {
             {featuredEvents.map((event) => (
               <div
                 key={event.id}
-                className="group card-hover"
+                className="group card-hover entrance-card"
               >
                 {event.banner_url ? (
-                  <div className="relative h-48 w-full overflow-hidden">
+                  <div className="image-zoom-shell relative h-48 w-full">
                     <img
                       src={`http://localhost:5000${event.banner_url}`}
                       alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="image-zoom h-full w-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-slate-950/50" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-primary/10" />
                   </div>
                 ) : (
-                  <div className="w-full h-48 bg-slate-900 flex items-center justify-center text-slate-400 font-bold">
+                  <div className="flex h-48 w-full items-center justify-center bg-bg-soft text-sm font-bold uppercase tracking-[0.2em] text-muted">
                     NO IMAGE
                   </div>
                 )}
@@ -200,22 +200,22 @@ export default function Home() {
                     <span className="badge-primary text-xs">
                       {event.type}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">
+                    <span className="text-xs font-medium text-muted">
                       Limit: {event.capacity} seats
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-slate-100 transition-colors line-clamp-1">
+                  <h3 className="mb-2 line-clamp-1 text-xl font-bold text-ink transition-colors group-hover:text-primary">
                     <Link to={`/event/${event.id}`}>{event.title}</Link>
                   </h3>
                   
-                  <p className="text-slate-400 text-sm line-clamp-2 mb-4 font-normal">
+                  <p className="mb-4 line-clamp-2 text-sm font-normal text-muted">
                     {event.description}
                   </p>
 
-                  <div className="flex flex-col gap-2.5 text-slate-400 text-sm border-t border-slate-700 pt-4 mb-6">
+                  <div className="mb-6 flex flex-col gap-2.5 border-t border-border pt-4 text-sm text-muted">
                     <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-slate-300 flex-shrink-0" />
+                      <Calendar className="mr-2 h-4 w-4 flex-shrink-0 text-primary" />
                       <span className="line-clamp-1">
                         {new Date(event.start_date).toLocaleDateString(undefined, {
                           weekday: 'short',
@@ -227,14 +227,14 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-slate-300 flex-shrink-0" />
+                      <MapPin className="mr-2 h-4 w-4 flex-shrink-0 text-accent" />
                       <span className="line-clamp-1">{event.location || 'Online / Link Available'}</span>
                     </div>
                   </div>
 
                   <Link
                     to={`/event/${event.id}`}
-                    className="block text-center w-full bg-slate-700/50 border border-slate-600 hover:bg-slate-700 hover:border-slate-600 hover:text-white text-slate-200 font-semibold py-2.5 rounded-xl transition-colors duration-200 text-sm"
+                    className="block w-full rounded-2xl border border-border bg-bg-soft py-2.5 text-center text-sm font-semibold text-ink transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary hover:text-white"
                   >
                     View Details
                   </Link>
@@ -246,80 +246,80 @@ export default function Home() {
       </section>
 
       {/* Core Platform Capabilities Section */}
-      <section className="bg-slate-900 text-white py-24 px-4 sm:px-6 lg:px-8 border-y border-slate-700">
+      <section className="border-y border-border bg-bg-soft/70 px-4 py-24 text-ink sm:px-6 lg:px-8 fade-in-section">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
               Designed for Seamless Operations
             </h2>
-            <p className="max-w-xl mx-auto text-slate-300 font-light text-sm sm:text-base">
+            <p className="mx-auto max-w-xl text-sm font-light text-muted sm:text-base">
               A comprehensive event stack empowering organizers and attendees with secure digital tooling and automated tracking systems.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-primary/10 p-3 text-primary">
                 <QrCode className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Secure Ticket QR Scanner</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Secure Ticket QR Scanner</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Unique ticket generation with instant signatures. Verify check-ins securely with our built-in scanner during the live event.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-accent/12 p-3 text-accent">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Automated Waitlist seats</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Automated Waitlist seats</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Exceeded capacities are managed automatically. Registrants join the waitlist and get auto-promoted when spots open up.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-primary/10 p-3 text-primary">
                 <MessageSquareHeart className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Feedback & Evaluation</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Feedback & Evaluation</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Attendees rate sessions and submit feedback directly, helping organizers analyze workshop effectiveness and refine parameters.
               </p>
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-accent/12 p-3 text-accent">
                 <ImageIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Shared Digital Galleries</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Shared Digital Galleries</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Collaborative photo streams for active engagement. Attendees share memories and like photos live in real-time.
               </p>
             </div>
 
             {/* Feature 5 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-primary/10 p-3 text-primary">
                 <GraduationCap className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Verified PDFs & Certificates</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Verified PDFs & Certificates</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Automatic generation of digital participation certificates with custom designs once the event is marked completed.
               </p>
             </div>
 
             {/* Feature 6 */}
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-700 transition-colors duration-200 hover:border-slate-600">
-              <div className="p-3 bg-slate-800 rounded-xl inline-block mb-4 text-slate-200">
+            <div className="card-hover p-6">
+              <div className="mb-4 inline-block rounded-2xl bg-accent/12 p-3 text-accent">
                 <Award className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-slate-100">Live Metrics Dashboard</h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-bold text-ink">Live Metrics Dashboard</h3>
+              <p className="text-sm leading-relaxed text-muted">
                 Real-time dashboard updates tracking user check-ins, capacity fill percentages, and instant CSV registrant reports.
               </p>
             </div>
@@ -328,74 +328,74 @@ export default function Home() {
       </section>
 
       {/* Real-time Statistics / Mockup Dashboard */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="card p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 fade-in-section">
+        <div className="card grid grid-cols-1 items-center gap-12 p-8 sm:p-12 lg:grid-cols-2">
           <div>
             <span className="badge-primary text-xs mb-4 inline-block">
               Operational Statistics
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight mb-6">
+            <h2 className="mb-6 text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
               Track Real-time Activity <br />
               With Zero Overhead
             </h2>
-            <p className="text-slate-300 mb-8 font-light text-base leading-relaxed">
+            <p className="mb-8 text-base font-light leading-relaxed text-muted">
               EventSphere eliminates administrative bottlenecks. Monitor ticket check-ins, download reports, and observe waitlist state dynamically as registrations change.
             </p>
             
             <div className="grid grid-cols-2 gap-6">
-              <div className="border-l-4 border-slate-600 pl-4">
-                <div className="text-3xl font-extrabold text-slate-100">98.6%</div>
-                <div className="text-slate-400 text-xs mt-1 uppercase font-semibold">Average Check-in Rate</div>
+              <div className="border-l-4 border-primary pl-4">
+                <div className="text-3xl font-extrabold text-ink">98.6%</div>
+                <div className="mt-1 text-xs font-semibold uppercase text-muted">Average Check-in Rate</div>
               </div>
-              <div className="border-l-4 border-slate-600 pl-4">
-                <div className="text-3xl font-extrabold text-slate-100">&lt; 3s</div>
-                <div className="text-slate-400 text-xs mt-1 uppercase font-semibold">Verification Speed</div>
+              <div className="border-l-4 border-accent pl-4">
+                <div className="text-3xl font-extrabold text-ink">&lt; 3s</div>
+                <div className="mt-1 text-xs font-semibold uppercase text-muted">Verification Speed</div>
               </div>
             </div>
           </div>
 
           {/* Interactive mockup representation */}
-          <div className="bg-slate-950 rounded-2xl p-6 border border-slate-700 text-white shadow-sm relative">
+          <div className="relative rounded-[28px] border border-border bg-bg-soft p-6 text-ink shadow-[0_24px_70px_-38px_rgba(93,56,145,0.26)]">
             <div className="absolute top-3 right-3 flex space-x-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <div className="h-2.5 w-2.5 rounded-full bg-danger" />
+              <div className="h-2.5 w-2.5 rounded-full bg-accent" />
+              <div className="h-2.5 w-2.5 rounded-full bg-success" />
             </div>
 
-            <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-slate-700">
-              <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-sm font-black">
+            <div className="mb-6 flex items-center space-x-3 border-b border-border pb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-white">
                 ES
               </div>
               <div>
-                <p className="text-xs text-slate-400">Live Status Tracker</p>
+                <p className="text-xs text-muted">Live Status Tracker</p>
                 <p className="text-sm font-semibold">Organizer Terminal</p>
               </div>
             </div>
 
             <div className="space-y-4 text-xs font-mono">
-              <div className="flex justify-between items-center bg-slate-900/60 p-3 rounded-lg border border-slate-700/80">
-                <span className="text-slate-400">Active Registrants:</span>
-                <span className="text-emerald-400 font-bold">1,824 Attendees</span>
+              <div className="flex items-center justify-between rounded-2xl border border-border bg-surface/90 p-3">
+                <span className="text-muted">Active Registrants:</span>
+                <span className="font-bold text-success">1,824 Attendees</span>
               </div>
 
-              <div className="flex justify-between items-center bg-slate-900/60 p-3 rounded-lg border border-slate-700/80">
-                <span className="text-slate-400">Waitlist promoted:</span>
-                <span className="text-slate-100 font-bold">+42 promoted</span>
+              <div className="flex items-center justify-between rounded-2xl border border-border bg-surface/90 p-3">
+                <span className="text-muted">Waitlist promoted:</span>
+                <span className="font-bold text-ink">+42 promoted</span>
               </div>
 
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 mb-1.5">
+                <div className="mb-1.5 flex justify-between text-[10px] text-muted">
                   <span>CAPACITY FILL</span>
                   <span>92%</span>
                 </div>
-                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
-                  <div className="bg-slate-600 h-full rounded-full w-[92%]" />
+                <div className="h-2 w-full overflow-hidden rounded-full border border-border bg-surface">
+                  <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-primary to-accent" />
                 </div>
               </div>
 
               <div className="pt-2">
-                <div className="text-[10px] text-slate-500 mb-2">LIVE ACTIONS LOG</div>
-                <div className="bg-slate-900 p-3 rounded-lg text-[11px] text-slate-100 leading-normal border border-slate-700/50">
+                <div className="mb-2 text-[10px] text-muted">LIVE ACTIONS LOG</div>
+                <div className="rounded-2xl border border-border bg-surface p-3 text-[11px] leading-normal text-ink">
                   &gt; Ticket signed matching keys [OK] <br />
                   &gt; attendee@example.com checked in <br />
                   &gt; QR Code verified successfully
@@ -407,13 +407,14 @@ export default function Home() {
       </section>
 
       {/* Call to Action Banner */}
-      <section className="bg-slate-900 py-16 px-4 sm:px-6 lg:px-8 text-center text-white">
+      <section className="px-4 py-16 text-center sm:px-6 lg:px-8 fade-in-section">
 
         <div className="max-w-4xl mx-auto relative z-10">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
+          <div className="rounded-[32px] border border-border bg-surface/90 px-6 py-12 shadow-[0_28px_80px_-38px_rgba(93,56,145,0.25)]">
+          <h2 className="mb-4 text-3xl font-extrabold text-ink sm:text-4xl">
             Ready to Organize Your Next Event?
           </h2>
-          <p className="text-slate-200 text-sm sm:text-base max-w-xl mx-auto mb-8 font-light">
+          <p className="mx-auto mb-8 max-w-xl text-sm font-light text-muted sm:text-base">
             Create an organizer account, post workshop schedules, upload custom banners, and start tracking registration waitlists immediately.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -430,6 +431,7 @@ export default function Home() {
             >
               <span>Explore Events</span>
             </Link>
+          </div>
           </div>
         </div>
       </section>

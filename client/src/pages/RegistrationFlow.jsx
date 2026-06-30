@@ -66,38 +66,38 @@ export default function RegistrationFlow() {
   };
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-500">Loading registration form...</div>;
+    return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-muted">Loading registration form...</div>;
   }
 
   if (error && !event) {
-    return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-red-600 font-bold">{error}</div>;
+    return <div className="max-w-3xl mx-auto px-4 py-12 text-center font-bold text-danger">{error}</div>;
   }
 
   return (
-    <div className="page-shell py-8 sm:py-10">
-      <button onClick={() => navigate(`/event/${id}`)} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-indigo-600">
+    <div className="page-shell py-8 sm:py-10 fade-in-section">
+      <button onClick={() => navigate(`/event/${id}`)} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted transition-all duration-300 hover:-translate-x-0.5 hover:text-primary">
         <ArrowLeft className="h-4 w-4" />
         Back to event
       </button>
 
-      <div className="card p-6 sm:p-8">
+      <div className="card entrance-card p-6 sm:p-8">
         <div className="mb-6 flex flex-col gap-2">
-          <h2 className="text-2xl font-semibold text-slate-900">Register for event</h2>
-          <h3 className="text-lg font-semibold text-indigo-600">{event.title}</h3>
+          <h2 className="text-2xl font-semibold text-ink">Register for event</h2>
+          <h3 className="text-lg font-semibold text-primary">{event.title}</h3>
         </div>
 
         {error && <div className="alert-error mb-6">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <h4 className="text-sm font-semibold text-slate-800">Primary attendee</h4>
-            <p className="mt-1 text-sm text-slate-500">Your profile information will be used as the main registration entry.</p>
+          <div className="rounded-3xl border border-border bg-bg-soft p-4">
+            <h4 className="text-sm font-semibold text-ink">Primary attendee</h4>
+            <p className="mt-1 text-sm text-muted">Your profile information will be used as the main registration entry.</p>
           </div>
 
           <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                <Users className="h-4 w-4 text-indigo-600" />
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <Users className="h-4 w-4 text-primary" />
                 Additional team members (optional)
               </h4>
               <button type="button" onClick={handleAddMember} className="btn-outline flex items-center gap-2 self-start">
@@ -107,7 +107,7 @@ export default function RegistrationFlow() {
             </div>
 
             {members.map((member, idx) => (
-              <div key={idx} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div key={idx} className="rounded-3xl border border-border bg-bg-soft p-4 entrance-card">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
                   <div>
                     <label className="label-base">Name</label>
@@ -117,7 +117,7 @@ export default function RegistrationFlow() {
                     <label className="label-base">Email</label>
                     <input type="email" required className="input-base" value={member.email} onChange={(e) => handleMemberChange(idx, 'email', e.target.value)} />
                   </div>
-                  <button type="button" onClick={() => handleRemoveMember(idx)} className="flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 p-2.5 text-rose-600 transition hover:bg-rose-100" aria-label="Remove member">
+                  <button type="button" onClick={() => handleRemoveMember(idx)} className="flex items-center justify-center rounded-2xl border border-danger/20 bg-danger/10 p-2.5 text-danger transition-all duration-300 hover:-translate-y-0.5 hover:bg-danger/14" aria-label="Remove member">
                     <Trash2 className="h-5 w-5" />
                   </button>
                 </div>
