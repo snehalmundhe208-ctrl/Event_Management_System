@@ -57,6 +57,10 @@ body {
   min-height: 100vh;
 }
 
+img {
+  display: block;
+}
+
 ::selection {
   background: rgb(var(--color-primary-rgb) / 0.92);
   color: #ffffff;
@@ -65,6 +69,18 @@ body {
 @layer components {
   .page-shell {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .layout-shell {
+    @apply relative overflow-hidden;
+  }
+
+  .layout-bg-overlay {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.48), rgb(255 255 255 / 0.18)),
+      radial-gradient(circle at top center, rgb(var(--color-primary-rgb) / 0.16), transparent 34%),
+      url('./assets/hero.png') center top / cover no-repeat;
+    @apply pointer-events-none absolute inset-0 opacity-[0.16];
   }
 
   .card {
@@ -157,5 +173,29 @@ body {
 
   .stat-card {
     @apply card entrance-card transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_26px_74px_-36px_rgba(93,56,145,0.28)];
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-2xl bg-gradient-to-r from-bg-soft via-white to-bg-soft bg-[length:200%_100%];
+  }
+
+  .skeleton-card {
+    @apply card overflow-hidden p-6;
+  }
+}
+
+.page-transition {
+  position: relative;
+  animation: page-enter 220ms ease-out;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

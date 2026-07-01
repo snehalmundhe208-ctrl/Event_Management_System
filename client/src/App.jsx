@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -46,10 +46,13 @@ function ProtectedRoute({ children, allowedRoles }) {
 }
 
 function MainLayout({ children }) {
+  const location = useLocation();
+
   return (
-    <div className="flex min-h-screen flex-col bg-bg text-ink">
+    <div className="layout-shell flex min-h-screen flex-col bg-bg text-ink">
+      <div className="layout-bg-overlay" />
       <Navbar />
-      <main className="flex-1 w-full">{children}</main>
+      <main key={location.pathname} className="page-transition flex-1 w-full">{children}</main>
       <Footer />
     </div>
   );

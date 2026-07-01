@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Star, ArrowLeft } from 'lucide-react';
+import { Star, ArrowLeft, ImagePlus, X } from 'lucide-react';
+import { toAssetUrl } from '../utils/assets';
 
 export default function FeedbackSubmission() {
   const { eventId } = useParams();
@@ -13,13 +14,15 @@ export default function FeedbackSubmission() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const res = await api.get(`/events/${eventId}`);
         setEvent(res.data);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch event details');
       } finally {
         setLoading(false);
@@ -28,16 +31,40 @@ export default function FeedbackSubmission() {
     fetchEvent();
   }, [eventId]);
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0] || null;
+
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+
+    setPhoto(file);
+    setPhotoPreview(file ? URL.createObjectURL(file) : '');
+  };
+
+  const clearPhoto = () => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+
+    setPhoto(null);
+    setPhotoPreview('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      await api.post('/feedback', {
-        eventId,
-        rating,
-        comment
-      });
+      const formData = new FormData();
+      formData.append('eventId', eventId);
+      formData.append('rating', rating);
+      formData.append('comment', comment);
+      if (photo) {
+        formData.append('photo', photo);
+      }
+
+      await api.post('/feedback', formData);
       alert('Thank you for your feedback!');
       navigate(`/event/${eventId}`);
     } catch (err) {
@@ -66,6 +93,14 @@ export default function FeedbackSubmission() {
           <h2 className="text-2xl font-extrabold text-ink">Event Feedback</h2>
           <p className="mt-1 text-sm text-muted">Share your thoughts on: <span className="font-semibold text-primary">{event?.title}</span></p>
         </div>
+
+        {event?.banner_url && (
+          <img
+            src={toAssetUrl(event.banner_url)}
+            alt={event.title}
+            className="h-48 w-full rounded-[24px] object-cover"
+          />
+        )}
 
         {error && (
           <div className="alert-error">
@@ -97,6 +132,33 @@ export default function FeedbackSubmission() {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-ink">Photo (Optional)</label>
+            {!photoPreview ? (
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[24px] border border-dashed border-border bg-bg-soft px-4 py-8 text-sm font-medium text-muted transition-all duration-300 hover:border-primary/35 hover:text-primary">
+                <ImagePlus className="h-5 w-5" />
+                <span>Upload review photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+              </label>
+            ) : (
+              <div className="relative overflow-hidden rounded-[24px] border border-border">
+                <img src={photoPreview} alt="Feedback preview" className="h-56 w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={clearPhoto}
+                  className="absolute right-3 top-3 rounded-full bg-white/95 p-2 text-ink shadow-sm"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           <button

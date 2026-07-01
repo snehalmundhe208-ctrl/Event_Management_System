@@ -66,6 +66,60 @@ const forceCancelEvent = async (eventId) => {
   return { id: eventId, title: event.title, status: 'cancelled' };
 };
 
+const listPendingApprovals = async () => {
+  const res = await db.query(
+    `SELECT e.*, u.name as organizer_name, c.name as category_name
+     FROM events e
+     JOIN users u ON e.organizer_id = u.id
+     LEFT JOIN categories c ON e.category_id = c.id
+     WHERE e.status = 'draft'
+     ORDER BY e.created_at DESC`
+  );
+  return res.rows;
+};
+
+const approveEvent = async (eventId, adminId) => {
+  const res = await db.query(
+    `UPDATE events
+     SET status = 'published',
+         approved_at = CURRENT_TIMESTAMP,
+         approved_by = $2,
+         rejection_reason = NULL,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING id, title, status`,
+    [eventId, adminId]
+  );
+
+  if (res.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return res.rows[0];
+};
+
+const rejectEvent = async (eventId, reason) => {
+  const res = await db.query(
+    `UPDATE events
+     SET status = 'rejected',
+         rejection_reason = $2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING id, title, status, rejection_reason`,
+    [eventId, reason || 'Rejected by admin']
+  );
+
+  if (res.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return res.rows[0];
+};
+
 const getPlatformAnalytics = async () => {
   const res = await db.query(`
     SELECT
@@ -80,6 +134,9 @@ module.exports = {
   listUsers,
   toggleUserSuspension,
   listAllEvents,
+  listPendingApprovals,
+  approveEvent,
+  rejectEvent,
   forceCancelEvent,
   getPlatformAnalytics
 };

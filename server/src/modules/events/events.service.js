@@ -1,5 +1,7 @@
 const db = require('../../config/db');
 
+const PUBLIC_EVENT_STATUSES = ['published', 'completed'];
+
 const listCategories = async () => {
   const res = await db.query('SELECT id, name FROM categories ORDER BY name ASC');
   return res.rows;
@@ -10,7 +12,7 @@ const listTags = async () => {
   return res.rows;
 };
 
-const listEvents = async (filters) => {
+const listEvents = async (filters, user) => {
   let queryText = `
     SELECT e.*, c.name as category_name,
            COALESCE(json_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '[]') as tags
@@ -21,15 +23,23 @@ const listEvents = async (filters) => {
   `;
   const whereClauses = [];
   const params = [];
+  const isAdmin = user?.roles?.includes('admin');
+  const isOwnerScope = user?.id && filters.organizerId === user.id;
 
   if (filters.status && filters.status !== 'all') {
-    params.push(filters.status);
-    whereClauses.push(`e.status = $${params.length}`);
+    if (['draft', 'rejected'].includes(filters.status) && !isAdmin && !isOwnerScope) {
+      whereClauses.push('1 = 0');
+    } else {
+      params.push(filters.status);
+      whereClauses.push(`e.status = $${params.length}`);
+    }
   } else if (!filters.status) {
-    params.push('published');
-    whereClauses.push(`e.status = $${params.length}`);
+    params.push(PUBLIC_EVENT_STATUSES);
+    whereClauses.push(`e.status = ANY($${params.length})`);
+  } else if (filters.status === 'all' && !isAdmin && !isOwnerScope) {
+    params.push(PUBLIC_EVENT_STATUSES);
+    whereClauses.push(`e.status = ANY($${params.length})`);
   }
-  // if status === 'all', no status filter is added (returns all statuses)
 
   if (filters.keyword) {
     params.push(`%${filters.keyword}%`);
@@ -76,7 +86,7 @@ const listEvents = async (filters) => {
   return res.rows;
 };
 
-const getEvent = async (id) => {
+const getEvent = async (id, user) => {
   const res = await db.query(
     `SELECT e.*, c.name as category_name,
             COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL), '[]') as tags
@@ -93,17 +103,40 @@ const getEvent = async (id) => {
     error.statusCode = 404;
     throw error;
   }
-  return res.rows[0];
+  const event = res.rows[0];
+  const isAdmin = user?.roles?.includes('admin');
+  const isOrganizer = user?.id === event.organizer_id;
+
+  if (['draft', 'rejected'].includes(event.status) && !isAdmin && !isOrganizer) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return event;
 };
 
 const createEvent = async (data, organizerId) => {
-  const { title, description, categoryId, startDate, endDate, type, location, capacity, tags } = data;
+  const { title, description, categoryId, startDate, endDate, type, location, capacity, tags, bannerUrl, galleryUrls } = data;
 
   const eventRes = await db.query(
-    `INSERT INTO events (title, description, category_id, start_date, end_date, type, location, capacity, organizer_id, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft')
+    `INSERT INTO events (title, description, category_id, start_date, end_date, type, location, capacity, organizer_id, status, banner_url, thumbnail_url, gallery_urls)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft', $10, $11, $12::jsonb)
      RETURNING *`,
-    [title, description, categoryId, startDate, endDate, type, location, capacity, organizerId]
+    [
+      title,
+      description,
+      categoryId,
+      startDate,
+      endDate,
+      type,
+      location,
+      capacity,
+      organizerId,
+      bannerUrl || null,
+      bannerUrl || null,
+      JSON.stringify(galleryUrls || [])
+    ]
   );
   const event = eventRes.rows[0];
 
@@ -116,7 +149,7 @@ const createEvent = async (data, organizerId) => {
     }
   }
 
-  return getEvent(event.id);
+  return getEvent(event.id, { id: organizerId, roles: [] });
 };
 
 const updateEvent = async (id, data, user) => {
@@ -136,7 +169,7 @@ const updateEvent = async (id, data, user) => {
     throw error;
   }
 
-  const { title, description, categoryId, startDate, endDate, type, location, capacity, tags } = data;
+  const { title, description, categoryId, startDate, endDate, type, location, capacity, tags, bannerUrl, galleryUrls } = data;
 
   await db.query(
     `UPDATE events
@@ -148,9 +181,25 @@ const updateEvent = async (id, data, user) => {
          type = COALESCE($6, type),
          location = COALESCE($7, location),
          capacity = COALESCE($8, capacity),
+         banner_url = COALESCE($9, banner_url),
+         thumbnail_url = COALESCE($10, thumbnail_url),
+         gallery_urls = COALESCE($11::jsonb, gallery_urls),
          updated_at = CURRENT_TIMESTAMP
-     WHERE id = $9`,
-    [title, description, categoryId, startDate, endDate, type, location, capacity, id]
+     WHERE id = $12`,
+    [
+      title,
+      description,
+      categoryId,
+      startDate,
+      endDate,
+      type,
+      location,
+      capacity,
+      bannerUrl || null,
+      bannerUrl || null,
+      galleryUrls ? JSON.stringify(galleryUrls) : null,
+      id
+    ]
   );
 
   if (tags) {
@@ -163,7 +212,7 @@ const updateEvent = async (id, data, user) => {
     }
   }
 
-  return getEvent(id);
+  return getEvent(id, user);
 };
 
 const publishEvent = async (id, user) => {
@@ -175,16 +224,40 @@ const publishEvent = async (id, user) => {
   }
 
   const event = eventRes.rows[0];
-  const isOrganizer = event.organizer_id === user.id;
   const isAdmin = user.roles.includes('admin');
-  if (!isOrganizer && !isAdmin) {
-    const error = new Error('Forbidden');
+  if (!isAdmin) {
+    const error = new Error('Only admins can approve and publish events');
     error.statusCode = 403;
     throw error;
   }
 
-  await db.query("UPDATE events SET status = 'published', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [id]);
-  return getEvent(id);
+  await db.query(
+    "UPDATE events SET status = 'published', approved_at = CURRENT_TIMESTAMP, approved_by = $2, rejection_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+    [id, user.id]
+  );
+  return getEvent(id, user);
+};
+
+const rejectEvent = async (id, reason, user) => {
+  const eventRes = await db.query('SELECT title FROM events WHERE id = $1', [id]);
+  if (eventRes.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (!user.roles.includes('admin')) {
+    const error = new Error('Only admins can reject events');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  await db.query(
+    "UPDATE events SET status = 'rejected', rejection_reason = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+    [id, reason || 'Rejected by admin']
+  );
+
+  return getEvent(id, user);
 };
 
 const cancelEvent = async (id, user) => {
@@ -219,7 +292,7 @@ const cancelEvent = async (id, user) => {
     );
   }
 
-  return getEvent(id);
+  return getEvent(id, user);
 };
 
 const uploadBanner = async (id, filePath, user) => {
@@ -240,10 +313,38 @@ const uploadBanner = async (id, filePath, user) => {
   }
 
   await db.query(
-    'UPDATE events SET banner_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+    'UPDATE events SET banner_url = $1, thumbnail_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
     [filePath, id]
   );
   return getEvent(id);
+};
+
+const uploadGallery = async (id, photoUrls, user) => {
+  const eventRes = await db.query('SELECT organizer_id, gallery_urls FROM events WHERE id = $1', [id]);
+  if (eventRes.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const event = eventRes.rows[0];
+  const isOrganizer = event.organizer_id === user.id;
+  const isAdmin = user.roles.includes('admin');
+  if (!isOrganizer && !isAdmin) {
+    const error = new Error('Forbidden');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const currentGallery = Array.isArray(event.gallery_urls) ? event.gallery_urls : [];
+  const mergedGallery = [...currentGallery, ...photoUrls];
+
+  await db.query(
+    'UPDATE events SET gallery_urls = $1::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+    [JSON.stringify(mergedGallery), id]
+  );
+
+  return getEvent(id, user);
 };
 
 const completeEvent = async (id, user) => {
@@ -310,8 +411,10 @@ module.exports = {
   createEvent,
   updateEvent,
   publishEvent,
+  rejectEvent,
   cancelEvent,
   completeEvent,
   getCertificate,
-  uploadBanner
+  uploadBanner,
+  uploadGallery
 };

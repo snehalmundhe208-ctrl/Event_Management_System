@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import { toAssetUrl } from '../utils/assets';
 import {
   Calendar,
   MapPin,
@@ -183,7 +184,7 @@ export default function Home() {
                 {event.banner_url ? (
                   <div className="image-zoom-shell relative h-48 w-full">
                     <img
-                      src={`http://localhost:5000${event.banner_url}`}
+                      src={toAssetUrl(event.banner_url)}
                       alt={event.title}
                       className="image-zoom h-full w-full object-cover"
                     />

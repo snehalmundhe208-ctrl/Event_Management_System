@@ -1,6 +1,19 @@
 const db = require('../../config/db');
 
-const submitFeedback = async (userId, { eventId, rating, comment }) => {
+const submitFeedback = async (userId, { eventId, rating, comment, photoUrl }) => {
+  const eventRes = await db.query('SELECT status FROM events WHERE id = $1', [eventId]);
+  if (eventRes.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (eventRes.rows[0].status !== 'completed') {
+    const error = new Error('Feedback is only available for completed events');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const checkinRes = await db.query(
     `SELECT ci.id
      FROM check_ins ci
@@ -27,8 +40,8 @@ const submitFeedback = async (userId, { eventId, rating, comment }) => {
   }
 
   const res = await db.query(
-    'INSERT INTO feedback (event_id, user_id, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *',
-    [eventId, userId, rating, comment]
+    'INSERT INTO feedback (event_id, user_id, rating, comment, photo_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [eventId, userId, rating, comment || null, photoUrl || null]
   );
   return res.rows[0];
 };

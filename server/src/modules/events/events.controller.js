@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const eventsService = require('./events.service');
+const { uploadBuffer } = require('../../config/cloudinary');
 
 const createEventSchema = z.object({
   title: z.string().min(1),
@@ -10,10 +11,15 @@ const createEventSchema = z.object({
   type: z.enum(['in-person', 'online', 'hybrid']),
   location: z.string().nullable().optional(),
   capacity: z.coerce.number().int().positive(),
-  tags: z.array(z.string().uuid()).optional()
+  tags: z.array(z.string().uuid()).optional(),
+  bannerUrl: z.string().url().optional(),
+  galleryUrls: z.array(z.string().url()).optional()
 });
 
 const updateEventSchema = createEventSchema.partial();
+const rejectEventSchema = z.object({
+  reason: z.string().max(500).optional()
+});
 
 const listCategories = async (req, res, next) => {
   try {
@@ -45,7 +51,7 @@ const listEvents = async (req, res, next) => {
       endDate: req.query.endDate,
       organizerId: req.query.organizerId
     };
-    const result = await eventsService.listEvents(filters);
+    const result = await eventsService.listEvents(filters, req.user);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -54,7 +60,7 @@ const listEvents = async (req, res, next) => {
 
 const getEvent = async (req, res, next) => {
   try {
-    const result = await eventsService.getEvent(req.params.id);
+    const result = await eventsService.getEvent(req.params.id, req.user);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -96,6 +102,19 @@ const publishEvent = async (req, res, next) => {
   }
 };
 
+const rejectEvent = async (req, res, next) => {
+  try {
+    const { reason } = rejectEventSchema.parse(req.body || {});
+    const result = await eventsService.rejectEvent(req.params.id, reason, req.user);
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+    }
+    next(error);
+  }
+};
+
 const cancelEvent = async (req, res, next) => {
   try {
     const result = await eventsService.cancelEvent(req.params.id, req.user);
@@ -110,8 +129,25 @@ const uploadBanner = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Banner file is required' });
     }
-    const relativePath = `/uploads/${req.file.filename}`;
-    const result = await eventsService.uploadBanner(req.params.id, relativePath, req.user);
+    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/banners');
+    const result = await eventsService.uploadBanner(req.params.id, secureUrl, req.user);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const uploadGallery = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'At least one gallery image is required' });
+    }
+
+    const photoUrls = await Promise.all(
+      req.files.map((file) => uploadBuffer(file.buffer, 'event-management/galleries'))
+    );
+
+    const result = await eventsService.uploadGallery(req.params.id, photoUrls, req.user);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -170,8 +206,10 @@ module.exports = {
   createEvent,
   updateEvent,
   publishEvent,
+  rejectEvent,
   cancelEvent,
   completeEvent,
   downloadCertificate,
-  uploadBanner
+  uploadBanner,
+  uploadGallery
 };

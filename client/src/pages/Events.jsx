@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
+import { toAssetUrl } from '../utils/assets';
 import { Search, Calendar, MapPin, Plus, X } from 'lucide-react';
 
 export default function Events() {
@@ -29,6 +30,9 @@ export default function Events() {
   const [newEnd, setNewEnd] = useState('');
   const [newTags, setNewTags] = useState([]);
   const [newBannerFile, setNewBannerFile] = useState(null);
+  const [newBannerPreview, setNewBannerPreview] = useState('');
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]);
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState([]);
   const [createError, setCreateError] = useState('');
 
   const fetchFilters = async () => {
@@ -94,6 +98,16 @@ export default function Events() {
         });
       }
 
+      if (newGalleryFiles.length > 0) {
+        const galleryFormData = new FormData();
+        newGalleryFiles.forEach((file) => {
+          galleryFormData.append('photos', file);
+        });
+        await api.post(`/events/${createdEvent.id}/gallery`, galleryFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
       setShowCreateModal(false);
       fetchEvents();
       setNewTitle('');
@@ -104,6 +118,9 @@ export default function Events() {
       setNewEnd('');
       setNewTags([]);
       setNewBannerFile(null);
+      setNewBannerPreview('');
+      setNewGalleryFiles([]);
+      setNewGalleryPreviews([]);
     } catch (err) {
       setCreateError(err.response?.data?.message || 'Failed to create event');
     }
@@ -184,14 +201,23 @@ export default function Events() {
             <div key={event.id} className="group card-hover entrance-card">
               {event.banner_url ? (
                 <div className="image-zoom-shell relative h-48 w-full">
-                  <img src={`http://localhost:5000${event.banner_url}`} alt={event.title} className="image-zoom h-full w-full object-cover" />
+                  <img src={toAssetUrl(event.banner_url)} alt={event.title} className="image-zoom h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-primary/10" />
                 </div>
               ) : (
                 <div className="flex h-48 w-full items-center justify-center bg-bg-soft text-sm font-semibold uppercase tracking-[0.2em] text-muted">No image</div>
               )}
               <div className="p-6">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
+                    event.status === 'draft'
+                      ? 'bg-warning/10 text-warning'
+                      : event.status === 'completed'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-primary/10 text-primary'
+                }`}>
+                  {event.status}
+                </span>
+                <div className="mb-3 mt-3 flex items-center justify-between gap-3">
                   <span className="badge-primary">{event.type}</span>
                   <span className="text-xs font-medium text-muted">Capacity {event.capacity}</span>
                 </div>
@@ -220,7 +246,8 @@ export default function Events() {
             >
               <X className="h-6 w-6" />
             </button>
-            <h3 className="text-2xl font-bold text-ink mb-6">Create Event (Draft)</h3>
+            <h3 className="text-2xl font-bold text-ink mb-2">Create Event</h3>
+            <p className="mb-6 text-sm text-muted">New events save as draft and wait for admin approval before going public.</p>
             <form onSubmit={handleCreateEvent} className="space-y-4 max-h-[70vh] overflow-y-auto">
               {createError && (
                 <div className="alert-error">
@@ -319,10 +346,36 @@ export default function Events() {
                     type="file"
                     accept="image/*"
                     className="input-base file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
-                    onChange={(e) => setNewBannerFile(e.target.files[0])}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      setNewBannerFile(file || null);
+                      setNewBannerPreview(file ? URL.createObjectURL(file) : '');
+                    }}
                   />
-                  {newBannerFile && (
-                    <p className="mt-2 text-xs text-muted">Selected: {newBannerFile.name}</p>
+                  {newBannerFile && <p className="mt-2 text-xs text-muted">Selected: {newBannerFile.name}</p>}
+                  {newBannerPreview && (
+                    <img src={newBannerPreview} alt="Banner preview" className="mt-3 h-40 w-full rounded-2xl object-cover" />
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <label className="label-base">Gallery Images</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="input-base file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-white hover:file:bg-accent/90"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setNewGalleryFiles(files);
+                      setNewGalleryPreviews(files.map((file) => URL.createObjectURL(file)));
+                    }}
+                  />
+                  {newGalleryPreviews.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-3">
+                      {newGalleryPreviews.map((preview) => (
+                        <img key={preview} src={preview} alt="Gallery preview" className="h-24 w-full rounded-2xl object-cover" />
+                      ))}
+                    </div>
                   )}
                 </div>
                 <div className="col-span-2">

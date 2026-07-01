@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const galleryService = require('./gallery.service');
+const { uploadBuffer } = require('../../config/cloudinary');
 
 const uploadPhotoSchema = z.object({
   eventId: z.string().uuid()
@@ -11,8 +12,8 @@ const uploadPhoto = async (req, res, next) => {
       return res.status(400).json({ message: 'Photo file is required' });
     }
     const { eventId } = uploadPhotoSchema.parse(req.body);
-    const relativePath = `/uploads/${req.file.filename}`;
-    const result = await galleryService.uploadPhoto(req.user.id, eventId, relativePath);
+    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/attendee-gallery');
+    const result = await galleryService.uploadPhoto(req.user.id, eventId, secureUrl);
     res.status(201).json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {

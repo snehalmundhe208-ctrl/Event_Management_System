@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Calendar, MapPin, CheckCircle, Users, Image as ImageIcon, MessageSquare, Star, Heart, Upload } from 'lucide-react';
+import { toAssetUrl } from '../utils/assets';
+import { Calendar, MapPin, Users, Image as ImageIcon, MessageSquare, Star, Heart, Upload } from 'lucide-react';
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -23,23 +24,19 @@ export default function EventDetail() {
   const [ratingSummary, setRatingSummary] = useState({ averageRating: 0, totalCount: 0 });
   const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
 
-  const [newRating, setNewRating] = useState(5);
-  const [newComment, setNewComment] = useState('');
-  const [feedbackError, setFeedbackError] = useState('');
-
   const [bannerFile, setBannerFile] = useState(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
-  const fetchEventDetails = async () => {
+  const fetchEventDetails = useCallback(async () => {
     try {
       const res = await api.get(`/events/${id}`);
       setEvent(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load event details');
     }
-  };
+  }, [id]);
 
-  const fetchUserRegistration = async () => {
+  const fetchUserRegistration = useCallback(async () => {
     if (!user) return;
     try {
       const res = await api.get('/registrations/my');
@@ -55,9 +52,9 @@ export default function EventDetail() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [id, user]);
 
-  const fetchGallery = async () => {
+  const fetchGallery = useCallback(async () => {
     try {
       const params = user ? { userId: user.id } : {};
       const res = await api.get(`/gallery/event/${id}`, { params });
@@ -65,9 +62,9 @@ export default function EventDetail() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [id, user]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = useCallback(async () => {
     try {
       const listRes = await api.get(`/feedback/event/${id}`);
       setFeedbacks(listRes.data);
@@ -82,20 +79,20 @@ export default function EventDetail() {
     } catch (err) {
       console.error(err);
     }
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    await fetchEventDetails();
-    await fetchUserRegistration();
-    await fetchGallery();
-    await fetchFeedback();
-    setLoading(false);
-  };
+  }, [id, user]);
 
   useEffect(() => {
-    loadData();
-  }, [id, user]);
+    const run = async () => {
+      setLoading(true);
+      await fetchEventDetails();
+      await fetchUserRegistration();
+      await fetchGallery();
+      await fetchFeedback();
+      setLoading(false);
+    };
+
+    void run();
+  }, [fetchEventDetails, fetchFeedback, fetchGallery, fetchUserRegistration]);
 
   const handleRegisterRedirect = () => {
     navigate(`/register/${id}`);
@@ -107,7 +104,10 @@ export default function EventDetail() {
       await api.delete(`/registrations/${registration.id}`);
       setRegistration(null);
       setIsCheckedIn(false);
-      loadData();
+      await fetchEventDetails();
+      await fetchUserRegistration();
+      await fetchGallery();
+      await fetchFeedback();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to cancel registration');
     }
@@ -193,22 +193,6 @@ export default function EventDetail() {
     }
   };
 
-  const handleFeedbackSubmit = async (e) => {
-    e.preventDefault();
-    setFeedbackError('');
-    try {
-      await api.post('/feedback', {
-        eventId: id,
-        rating: newRating,
-        comment: newComment
-      });
-      setNewComment('');
-      fetchFeedback();
-    } catch (err) {
-      setFeedbackError(err.response?.data?.message || 'Feedback submission failed');
-    }
-  };
-
   if (loading) {
     return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-muted">Loading event details...</div>;
   }
@@ -220,13 +204,14 @@ export default function EventDetail() {
   const isOrganizer = event.organizer_id === user?.id;
   const isAdmin = user?.roles?.includes('admin');
   const showAdminControls = isOrganizer || isAdmin;
+  const isCompleted = event.status === 'completed';
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 fade-in-section">
       <div className="relative mb-8 flex h-80 items-center justify-center overflow-hidden rounded-[32px] border border-border bg-bg-soft shadow-[0_24px_70px_-36px_rgba(93,56,145,0.22)]">
         {event.banner_url ? (
           <img
-            src={`http://localhost:5000${event.banner_url}`}
+            src={toAssetUrl(event.banner_url)}
             alt={event.title}
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
           />
@@ -253,142 +238,124 @@ export default function EventDetail() {
             <p className="whitespace-pre-wrap leading-relaxed text-muted">{event.description}</p>
           </div>
 
-          <div className="card entrance-card p-6">
-            <h3 className="mb-4 flex items-center text-lg font-bold text-ink">
-              <ImageIcon className="mr-2 h-5 w-5 text-primary" />
-              Event Gallery
-            </h3>
-            {isCheckedIn && (
-              <div className="mb-6 flex items-center space-x-3">
-                <label className="btn-primary cursor-pointer">
-                  <Upload className="h-4 w-4" />
-                  <span>Upload Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                  />
-                </label>
-                {uploadingPhoto && <span className="text-sm text-muted">Uploading...</span>}
-              </div>
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {gallery.length === 0 ? (
-                <div className="col-span-3 py-6 text-center text-sm text-muted">No photos in gallery.</div>
-              ) : (
-                gallery.map(item => (
-                  <div key={item.id} className="group relative overflow-hidden rounded-[22px] border border-border bg-bg-soft shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-28px_rgba(93,56,145,0.28)]">
-                    <img
-                      src={`http://localhost:5000${item.photo_url}`}
-                      alt="Gallery item"
-                      className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 flex items-end justify-between bg-ink/32 p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <span className="text-xs text-white truncate max-w-[60%]">{item.user_name}</span>
-                      <button
-                        onClick={() => handleLikeItem(item.id)}
-                        className="flex items-center space-x-1 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-danger transition-all duration-300 hover:scale-105"
-                      >
-                        <Heart className={`h-3 w-3 ${item.is_liked ? 'fill-current' : ''}`} />
-                        <span>{item.likes_count}</span>
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="card entrance-card p-6">
-            <h3 className="mb-4 flex items-center text-lg font-bold text-ink">
-              <MessageSquare className="mr-2 h-5 w-5 text-primary" />
-              Attendee Reviews
-            </h3>
-
-            {ratingSummary.totalCount > 0 && (
-              <div className="mb-6 flex items-center space-x-4 border-b border-border pb-4">
-                <div className="text-4xl font-extrabold text-primary">{ratingSummary.averageRating}</div>
-                <div>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.round(ratingSummary.averageRating)
-                            ? 'fill-current text-accent'
-                            : 'text-border'
-                        }`}
+          {isCompleted && (
+            <>
+              <div className="card entrance-card p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="flex items-center text-lg font-bold text-ink">
+                    <ImageIcon className="mr-2 h-5 w-5 text-primary" />
+                    Event Gallery
+                  </h3>
+                  {isCheckedIn && (
+                    <label className="btn-primary cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                        disabled={uploadingPhoto}
                       />
-                    ))}
-                  </div>
-                  <div className="mt-1 text-sm text-muted">{ratingSummary.totalCount} ratings</div>
+                    </label>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                  {gallery.length === 0 ? (
+                    <div className="col-span-3 py-6 text-center text-sm text-muted">No photos in gallery.</div>
+                  ) : (
+                    gallery.map((item) => (
+                      <div key={item.id} className="group relative overflow-hidden rounded-[22px] border border-border bg-bg-soft shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-28px_rgba(93,56,145,0.28)]">
+                        <img
+                          src={toAssetUrl(item.photo_url)}
+                          alt="Gallery item"
+                          className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 flex items-end justify-between bg-ink/32 p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <span className="max-w-[60%] truncate text-xs text-white">{item.user_name}</span>
+                          <button
+                            onClick={() => handleLikeItem(item.id)}
+                            className="flex items-center space-x-1 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-danger transition-all duration-300 hover:scale-105"
+                          >
+                            <Heart className={`h-3 w-3 ${item.is_liked ? 'fill-current' : ''}`} />
+                            <span>{item.likes_count}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            )}
 
-            {isCheckedIn && !hasSubmittedFeedback && (
-              <form onSubmit={handleFeedbackSubmit} className="mb-6 space-y-4 rounded-[24px] bg-bg-soft p-4">
-                <h4 className="text-sm font-semibold text-ink">Leave Feedback</h4>
-                {feedbackError && <div className="text-xs text-danger">{feedbackError}</div>}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted">Rating:</span>
-                  {[1, 2, 3, 4, 5].map((val) => (
-                    <button
-                      type="button"
-                      key={val}
-                      onClick={() => setNewRating(val)}
-                      className="p-0.5 text-accent transition-transform duration-300 hover:scale-110"
-                    >
-                      <Star className={`h-6 w-6 ${val <= newRating ? 'fill-current' : 'text-border'}`} />
-                    </button>
-                  ))}
+              <div className="card entrance-card p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="flex items-center text-lg font-bold text-ink">
+                    <MessageSquare className="mr-2 h-5 w-5 text-primary" />
+                    Attendee Reviews
+                  </h3>
+                  {isCheckedIn && !hasSubmittedFeedback && (
+                    <Link to={`/feedback/${id}`} className="btn-primary">
+                      Leave Feedback
+                    </Link>
+                  )}
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-muted">Comment</label>
-                  <textarea
-                    rows={2}
-                    className="textarea-base"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                >
-                  Submit Feedback
-                </button>
-              </form>
-            )}
 
-            <div className="space-y-4">
-              {feedbacks.length === 0 ? (
-                <div className="py-4 text-center text-sm text-muted">No reviews yet.</div>
-              ) : (
-                feedbacks.map(f => (
-                  <div key={f.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
-                    <div className="flex justify-between items-start">
-                      <span className="text-sm font-semibold text-ink">{f.user_name}</span>
+                {ratingSummary.totalCount > 0 && (
+                  <div className="mb-6 flex items-center space-x-4 border-b border-border pb-4">
+                    <div className="text-4xl font-extrabold text-primary">{ratingSummary.averageRating}</div>
+                    <div>
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${i < f.rating ? 'fill-current text-accent' : 'text-border'}`}
+                            className={`h-5 w-5 ${
+                              i < Math.round(ratingSummary.averageRating) ? 'fill-current text-accent' : 'text-border'
+                            }`}
                           />
                         ))}
                       </div>
+                      <div className="mt-1 text-sm text-muted">{ratingSummary.totalCount} ratings</div>
                     </div>
-                    {f.comment && <p className="mt-2 text-sm text-muted">{f.comment}</p>}
-                    <span className="mt-1 block text-xs text-muted/75">
-                      {new Date(f.created_at).toLocaleDateString()}
-                    </span>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+                )}
+
+                <div className="space-y-4">
+                  {feedbacks.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-muted">No reviews yet.</div>
+                  ) : (
+                    feedbacks.map((f) => (
+                      <div key={f.id} className="rounded-[22px] border border-border p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className="text-sm font-semibold text-ink">{f.user_name}</span>
+                            <span className="mt-1 block text-xs text-muted/75">
+                              {new Date(f.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i < f.rating ? 'fill-current text-accent' : 'text-border'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {f.comment && <p className="mt-3 text-sm text-muted">{f.comment}</p>}
+                        {f.photo_url && (
+                          <img
+                            src={toAssetUrl(f.photo_url)}
+                            alt="Review upload"
+                            className="mt-4 h-48 w-full rounded-[18px] object-cover"
+                          />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -469,6 +436,12 @@ export default function EventDetail() {
               </Link>
             )}
           </div>
+
+          {!isCompleted && (
+            <div className="card entrance-card p-6 text-sm text-muted">
+              Gallery and attendee feedback unlock after the event is completed.
+            </div>
+          )}
 
           {showAdminControls && (
             <div className="card entrance-card space-y-4 p-6">
