@@ -4,7 +4,7 @@ const eventsController = require('./events.controller');
 const { authenticate, optionalAuthenticate, requireRole } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
-router.get('/', eventsController.listEvents);
+router.get('/', optionalAuthenticate, eventsController.listEvents);
 router.get('/categories', eventsController.listCategories);
 router.get('/tags', eventsController.listTags);
 router.get('/:id', optionalAuthenticate, eventsController.getEvent);

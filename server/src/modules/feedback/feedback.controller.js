@@ -3,7 +3,7 @@ const feedbackService = require('./feedback.service');
 const { uploadBuffer } = require('../../config/cloudinary');
 
 const submitFeedbackSchema = z.object({
-  eventId: z.string().uuid(),
+  eventId: z.string().uuid().optional(),
   rating: z.coerce.number().int().min(1).max(5),
   comment: z.string().optional()
 });
@@ -11,13 +11,17 @@ const submitFeedbackSchema = z.object({
 const submitFeedback = async (req, res, next) => {
   try {
     const validated = submitFeedbackSchema.parse(req.body);
+    const eventId = validated.eventId || req.params.eventId;
+    if (!eventId) {
+      return res.status(400).json({ message: 'eventId is required' });
+    }
     let photoUrl = null;
 
     if (req.file) {
       photoUrl = await uploadBuffer(req.file.buffer, 'event-management/feedback');
     }
 
-    const result = await feedbackService.submitFeedback(req.user.id, { ...validated, photoUrl });
+    const result = await feedbackService.submitFeedback(req.user.id, { ...validated, eventId, photoUrl });
     res.status(201).json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {

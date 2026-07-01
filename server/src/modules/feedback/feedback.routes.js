@@ -5,6 +5,7 @@ const { authenticate } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 router.post('/', authenticate, upload.single('photo'), feedbackController.submitFeedback);
+router.post('/event/:eventId', authenticate, upload.single('photo'), feedbackController.submitFeedback);
 router.get('/event/:eventId', feedbackController.listFeedback);
 router.get('/event/:eventId/summary', feedbackController.getRatingSummary);
 

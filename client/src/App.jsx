@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -15,7 +15,6 @@ import OrganizerDashboard from './pages/OrganizerDashboard';
 import CheckInScanner from './pages/CheckInScanner';
 import FeedbackSubmission from './pages/FeedbackSubmission';
 import EventGallery from './pages/EventGallery';
-import AdminPanel from './pages/AdminPanel';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useContext(AuthContext);
@@ -70,11 +69,11 @@ export default function App() {
           <Route path="/event/:id" element={<MainLayout><EventDetail /></MainLayout>} />
           <Route path="/register/:id" element={<MainLayout><ProtectedRoute><RegistrationFlow /></ProtectedRoute></MainLayout>} />
           <Route path="/tickets" element={<MainLayout><ProtectedRoute><MyTickets /></ProtectedRoute></MainLayout>} />
-          <Route path="/dashboard" element={<MainLayout><ProtectedRoute allowedRoles={['organizer', 'admin']}><OrganizerDashboard /></ProtectedRoute></MainLayout>} />
+          <Route path="/dashboard" element={<MainLayout><ProtectedRoute><OrganizerDashboard /></ProtectedRoute></MainLayout>} />
           <Route path="/checkin/:eventId" element={<MainLayout><ProtectedRoute allowedRoles={['organizer', 'admin']}><CheckInScanner /></ProtectedRoute></MainLayout>} />
           <Route path="/feedback/:eventId" element={<MainLayout><ProtectedRoute><FeedbackSubmission /></ProtectedRoute></MainLayout>} />
           <Route path="/gallery/:eventId" element={<MainLayout><EventGallery /></MainLayout>} />
-          <Route path="/admin" element={<MainLayout><ProtectedRoute allowedRoles={['admin']}><AdminPanel /></ProtectedRoute></MainLayout>} />
+          <Route path="/admin" element={<MainLayout><ProtectedRoute allowedRoles={['admin']}><OrganizerDashboard /></ProtectedRoute></MainLayout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

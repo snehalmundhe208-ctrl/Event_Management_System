@@ -78,14 +78,14 @@ const register = async (userId, { eventId, members }) => {
       ticket = await ticketsService.generateTicket(registration.id, client);
       const msg = `Your registration for event "${event.title}" is confirmed.`;
       await client.query(
-        "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, 'registration_confirmed')",
-        [userId, msg]
+        "INSERT INTO notifications (user_id, message, type, event_id) VALUES ($1, $2, 'registration_confirmed', $3)",
+        [userId, msg, eventId]
       );
     } else {
       const msg = `You have been added to the waitlist for event "${event.title}".`;
       await client.query(
-        "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, 'waitlist_joined')",
-        [userId, msg]
+        "INSERT INTO notifications (user_id, message, type, event_id) VALUES ($1, $2, 'waitlist_joined', $3)",
+        [userId, msg, eventId]
       );
     }
 
@@ -176,8 +176,8 @@ const cancelRegistration = async (registrationId, userId) => {
 
           const promoMsg = `You have been promoted from the waitlist for event "${event.title}". Your registration is now confirmed.`;
           await client.query(
-            "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, 'waitlist_promotion')",
-            [wlReg.user_id, promoMsg]
+            "INSERT INTO notifications (user_id, message, type, event_id) VALUES ($1, $2, 'waitlist_promotion', $3)",
+            [wlReg.user_id, promoMsg, registration.event_id]
           );
 
           spotsFreed -= spotsNeeded;

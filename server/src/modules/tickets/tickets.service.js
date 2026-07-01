@@ -18,7 +18,7 @@ const generateTicket = async (registrationId, client) => {
 
 const getTicketDetails = async (ticketId, userId) => {
   const res = await db.query(
-    `SELECT t.*, r.event_id, r.user_id as attendee_id, e.title as event_title, e.start_date, e.location, e.type as event_type, u.name as attendee_name
+    `SELECT t.*, r.event_id, r.user_id as attendee_id, e.organizer_id, e.title as event_title, e.start_date, e.location, e.type as event_type, u.name as attendee_name
      FROM tickets t
      JOIN registrations r ON t.registration_id = r.id
      JOIN events e ON r.event_id = e.id

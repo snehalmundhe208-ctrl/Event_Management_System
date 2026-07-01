@@ -6,6 +6,8 @@ const upload = require('../../middleware/upload');
 
 router.post('/', authenticate, upload.single('photo'), galleryController.uploadPhoto);
 router.get('/event/:eventId', galleryController.listGalleryItems);
+router.get('/export/pdf', galleryController.downloadGalleryPdf);
+router.get('/export/jpeg', galleryController.downloadGalleryJpeg);
 router.post('/item/:itemId/like', authenticate, galleryController.likeGalleryItem);
 
 module.exports = router;

@@ -14,15 +14,43 @@ const listTags = async () => {
 
 const listEvents = async (filters, user) => {
   let queryText = `
-    SELECT e.*, c.name as category_name,
+    SELECT e.*, c.name as category_name, u.name as organizer_name,
+           COALESCE(fr.follower_count, 0) AS organizer_follower_count,
+           COALESCE(fs.is_following, FALSE) AS is_following_organizer,
+           COALESCE(rt.average_rating, 0) AS average_rating,
+           COALESCE(rt.total_ratings, 0) AS total_ratings,
+           COALESCE(cm.comment_count, 0) AS comment_count,
            COALESCE(json_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '[]') as tags
     FROM events e
+    JOIN users u ON u.id = e.organizer_id
     LEFT JOIN categories c ON e.category_id = c.id
     LEFT JOIN event_tags et ON e.id = et.event_id
     LEFT JOIN tags t ON et.tag_id = t.id
+    LEFT JOIN (
+      SELECT event_id, ROUND(AVG(rating)::numeric, 1) AS average_rating, COUNT(*)::int AS total_ratings
+      FROM feedback
+      GROUP BY event_id
+    ) rt ON rt.event_id = e.id
+    LEFT JOIN (
+      SELECT event_id, COUNT(*)::int AS comment_count
+      FROM event_comments
+      GROUP BY event_id
+    ) cm ON cm.event_id = e.id
+    LEFT JOIN (
+      SELECT following_id, COUNT(*)::int AS follower_count
+      FROM user_follows
+      GROUP BY following_id
+    ) fr ON fr.following_id = e.organizer_id
+    LEFT JOIN LATERAL (
+      SELECT EXISTS(
+        SELECT 1
+        FROM user_follows uf
+        WHERE uf.following_id = e.organizer_id AND uf.follower_id = $1
+      ) AS is_following
+    ) fs ON TRUE
   `;
   const whereClauses = [];
-  const params = [];
+  const params = [user?.id || null];
   const isAdmin = user?.roles?.includes('admin');
   const isOwnerScope = user?.id && filters.organizerId === user.id;
 
@@ -80,23 +108,50 @@ const listEvents = async (filters, user) => {
     queryText += ' WHERE ' + whereClauses.join(' AND ');
   }
 
-  queryText += ' GROUP BY e.id, c.name ORDER BY e.start_date ASC';
-
+  queryText += ' GROUP BY e.id, c.name, u.name, fr.follower_count, fs.is_following, rt.average_rating, rt.total_ratings, cm.comment_count ORDER BY e.start_date ASC';
   const res = await db.query(queryText, params);
   return res.rows;
 };
 
 const getEvent = async (id, user) => {
   const res = await db.query(
-    `SELECT e.*, c.name as category_name,
+    `SELECT e.*, c.name as category_name, u.name as organizer_name, u.roles as organizer_roles,
+            COALESCE(fr.follower_count, 0) AS organizer_follower_count,
+            COALESCE(fs.is_following, FALSE) AS is_following_organizer,
+            COALESCE(rt.average_rating, 0) AS average_rating,
+            COALESCE(rt.total_ratings, 0) AS total_ratings,
+            COALESCE(cm.comment_count, 0) AS comment_count,
             COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL), '[]') as tags
      FROM events e
+     JOIN users u ON u.id = e.organizer_id
      LEFT JOIN categories c ON e.category_id = c.id
      LEFT JOIN event_tags et ON e.id = et.event_id
      LEFT JOIN tags t ON et.tag_id = t.id
+     LEFT JOIN (
+       SELECT event_id, ROUND(AVG(rating)::numeric, 1) AS average_rating, COUNT(*)::int AS total_ratings
+       FROM feedback
+       GROUP BY event_id
+     ) rt ON rt.event_id = e.id
+     LEFT JOIN (
+       SELECT event_id, COUNT(*)::int AS comment_count
+       FROM event_comments
+       GROUP BY event_id
+     ) cm ON cm.event_id = e.id
+     LEFT JOIN (
+       SELECT following_id, COUNT(*)::int AS follower_count
+       FROM user_follows
+       GROUP BY following_id
+     ) fr ON fr.following_id = e.organizer_id
+     LEFT JOIN LATERAL (
+       SELECT EXISTS(
+         SELECT 1
+         FROM user_follows uf
+         WHERE uf.following_id = e.organizer_id AND uf.follower_id = $2
+       ) AS is_following
+     ) fs ON TRUE
      WHERE e.id = $1
-     GROUP BY e.id, c.name`,
-    [id]
+     GROUP BY e.id, c.name, u.name, u.roles, fr.follower_count, fs.is_following, rt.average_rating, rt.total_ratings, cm.comment_count`,
+    [id, user?.id || null]
   );
   if (res.rows.length === 0) {
     const error = new Error('Event not found');
@@ -287,8 +342,8 @@ const cancelEvent = async (id, user) => {
   const message = `Event "${event.title}" has been cancelled.`;
   for (const row of registrantsRes.rows) {
     await db.query(
-      'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
-      [row.user_id, message, 'event_cancelled']
+      'INSERT INTO notifications (user_id, message, type, event_id) VALUES ($1, $2, $3, $4)',
+      [row.user_id, message, 'event_cancelled', id]
     );
   }
 

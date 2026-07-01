@@ -29,7 +29,13 @@ export default function FeedbackSubmission() {
       }
     };
     fetchEvent();
-  }, [eventId]);
+
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [eventId, photoPreview]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -57,14 +63,15 @@ export default function FeedbackSubmission() {
     setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('eventId', eventId);
       formData.append('rating', rating);
       formData.append('comment', comment);
       if (photo) {
         formData.append('photo', photo);
       }
 
-      await api.post('/feedback', formData);
+      await api.post(`/feedback/event/${eventId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       alert('Thank you for your feedback!');
       navigate(`/event/${eventId}`);
     } catch (err) {

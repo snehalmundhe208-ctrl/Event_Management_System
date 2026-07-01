@@ -1,31 +1,22 @@
 const db = require('../../config/db');
 
 const submitFeedback = async (userId, { eventId, rating, comment, photoUrl }) => {
-  const eventRes = await db.query('SELECT status FROM events WHERE id = $1', [eventId]);
+  const eventRes = await db.query(
+    'SELECT status, end_date FROM events WHERE id = $1',
+    [eventId]
+  );
   if (eventRes.rows.length === 0) {
     const error = new Error('Event not found');
     error.statusCode = 404;
     throw error;
   }
 
-  if (eventRes.rows[0].status !== 'completed') {
-    const error = new Error('Feedback is only available for completed events');
+  const event = eventRes.rows[0];
+  const hasEnded = event.end_date ? new Date(event.end_date).getTime() <= Date.now() : false;
+
+  if (['draft', 'rejected', 'cancelled'].includes(event.status) || (!hasEnded && event.status !== 'completed')) {
+    const error = new Error('Feedback is only available after the event ends');
     error.statusCode = 400;
-    throw error;
-  }
-
-  const checkinRes = await db.query(
-    `SELECT ci.id
-     FROM check_ins ci
-     JOIN tickets t ON ci.ticket_id = t.id
-     JOIN registrations r ON t.registration_id = r.id
-     WHERE r.event_id = $1 AND r.user_id = $2`,
-    [eventId, userId]
-  );
-
-  if (checkinRes.rows.length === 0) {
-    const error = new Error('Feedback is only allowed for checked-in attendees');
-    error.statusCode = 403;
     throw error;
   }
 

@@ -3,11 +3,13 @@ const checkinService = require('./checkin.service');
 
 const scanSchema = z.object({
   ticketCode: z.string(),
-  signature: z.string()
+  signature: z.string(),
+  eventId: z.string().uuid().optional()
 });
 
 const manualSchema = z.object({
-  ticketCode: z.string()
+  ticketCode: z.string(),
+  eventId: z.string().uuid().optional()
 });
 
 const scanCheckIn = async (req, res, next) => {
@@ -45,8 +47,18 @@ const listCheckIns = async (req, res, next) => {
   }
 };
 
+const getMyCheckInStatus = async (req, res, next) => {
+  try {
+    const result = await checkinService.getMyCheckInStatus(req.params.eventId, req.user.id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   scanCheckIn,
   manualCheckIn,
-  listCheckIns
+  listCheckIns,
+  getMyCheckInStatus
 };

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { toAssetUrl } from '../utils/assets';
-import { Search, Calendar, MapPin, Plus, X } from 'lucide-react';
+import { Search, Calendar, MapPin, Plus, X, Star, MessageSquare, UserPlus } from 'lucide-react';
 
 export default function Events() {
   const { user } = useContext(AuthContext);
@@ -35,7 +35,7 @@ export default function Events() {
   const [newGalleryPreviews, setNewGalleryPreviews] = useState([]);
   const [createError, setCreateError] = useState('');
 
-  const fetchFilters = async () => {
+  const fetchFilters = useCallback(async () => {
     try {
       const catRes = await api.get('/events/categories');
       setCategories(catRes.data);
@@ -44,9 +44,9 @@ export default function Events() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, []);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const params = {};
       if (keyword) params.keyword = keyword;
@@ -61,15 +61,23 @@ export default function Events() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [endDate, keyword, selectedCategory, selectedTag, selectedType, startDate]);
 
   useEffect(() => {
-    fetchFilters();
-  }, []);
+    const run = async () => {
+      await fetchFilters();
+    };
+
+    void run();
+  }, [fetchFilters]);
 
   useEffect(() => {
-    fetchEvents();
-  }, [keyword, selectedCategory, selectedTag, selectedType, startDate, endDate]);
+    const run = async () => {
+      await fetchEvents();
+    };
+
+    void run();
+  }, [fetchEvents]);
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
@@ -227,6 +235,12 @@ export default function Events() {
                   <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /><span>{new Date(event.start_date).toLocaleDateString()}</span></div>
                   <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-accent" /><span className="line-clamp-1">{event.location || 'Online'}</span></div>
                 </div>
+                <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted">
+                  <div className="flex items-center gap-1.5"><Star className="h-4 w-4 fill-current text-accent" /><span>{event.average_rating || 0}</span><span>({event.total_ratings || 0})</span></div>
+                  <div className="flex items-center gap-1.5"><MessageSquare className="h-4 w-4 text-primary" /><span>{event.comment_count || 0}</span></div>
+                  <div className="flex items-center gap-1.5"><UserPlus className="h-4 w-4 text-success" /><span>{event.organizer_follower_count || 0}</span></div>
+                </div>
+                <div className="mb-4 text-xs text-muted">By {event.organizer_name}</div>
                 <div className="mb-5 flex flex-wrap gap-2">
                   {Array.isArray(event.tags) && event.tags.map((t, idx) => (<span key={idx} className="badge-outline">#{t}</span>))}
                 </div>

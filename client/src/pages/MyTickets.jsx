@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Ticket, Award, Calendar, MapPin, Download, AlertCircle, QrCode } from 'lucide-react';
@@ -25,20 +25,32 @@ export default function MyTickets() {
     fetchRegistrations();
   }, []);
 
-  const toggleQr = async (ticketId, ticketCode) => {
-    // If already loaded, just toggle visibility
+  const ensureTicketQrValue = async (ticketId) => {
     if (ticketDetails[ticketId]) {
-      setShowQr(prev => ({ ...prev, [ticketId]: !prev[ticketId] }));
-      return;
+      return ticketDetails[ticketId];
     }
+
     try {
       const res = await api.get(`/tickets/${ticketId}`);
       const { ticket_code, hmac_signature } = res.data;
       const qrValue = JSON.stringify({ ticketCode: ticket_code, signature: hmac_signature });
-      setTicketDetails(prev => ({ ...prev, [ticketId]: qrValue }));
-      setShowQr(prev => ({ ...prev, [ticketId]: true }));
+      setTicketDetails((prev) => ({ ...prev, [ticketId]: qrValue }));
+      return qrValue;
     } catch (err) {
       console.error('Could not load ticket QR', err);
+      return null;
+    }
+  };
+
+  const toggleQr = async (ticketId) => {
+    if (ticketDetails[ticketId]) {
+      setShowQr((prev) => ({ ...prev, [ticketId]: !prev[ticketId] }));
+      return;
+    }
+
+    const qrValue = await ensureTicketQrValue(ticketId);
+    if (qrValue) {
+      setShowQr((prev) => ({ ...prev, [ticketId]: true }));
     }
   };
 
@@ -55,6 +67,67 @@ export default function MyTickets() {
     } catch (err) {
       alert('Could not download ticket PDF.');
     }
+  };
+
+  const handleDownloadTicketJpeg = async (registration) => {
+    const qrValue = await ensureTicketQrValue(registration.ticket_id);
+    if (!qrValue) {
+      alert('Could not prepare ticket JPEG.');
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const qrCanvas = document.getElementById(`hidden-qr-${registration.ticket_id}`);
+    if (!qrCanvas) {
+      alert('Ticket QR is still loading. Try again.');
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 700;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#5D3891';
+    ctx.fillRect(0, 0, canvas.width, 120);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 46px Arial';
+    ctx.fillText('EVENT TICKET', 420, 72);
+
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText('Event', 80, 180);
+    ctx.fillText('Date', 80, 280);
+    ctx.fillText('Location', 80, 380);
+    ctx.fillText('Ticket Code', 80, 480);
+
+    ctx.font = '28px Arial';
+    ctx.fillText(registration.event_title, 80, 220);
+    ctx.fillText(new Date(registration.start_date).toLocaleString(), 80, 320);
+    ctx.fillText(registration.location || 'Online', 80, 420);
+    ctx.fillStyle = '#5D3891';
+    ctx.font = 'bold 34px monospace';
+    ctx.fillText(registration.ticket_code, 80, 525);
+
+    ctx.fillStyle = '#111827';
+    ctx.font = '18px Arial';
+    ctx.fillText(`Status: ${registration.status}`, 80, 590);
+
+    ctx.drawImage(qrCanvas, 840, 170, 260, 260);
+    ctx.font = '16px Arial';
+    ctx.fillText('Scan to verify entry', 885, 460);
+
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.download = `ticket-${registration.ticket_code}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
   };
 
   const handleDownloadCertificate = async (eventId, eventTitle) => {
@@ -142,7 +215,7 @@ export default function MyTickets() {
                         <span className="font-semibold">Ticket Code:</span> {reg.ticket_code}
                       </div>
                       <button
-                        onClick={() => toggleQr(reg.ticket_id, reg.ticket_code)}
+                        onClick={() => toggleQr(reg.ticket_id)}
                         className="flex items-center space-x-1 rounded-full border border-primary/20 bg-white px-2 py-1 text-xs font-semibold text-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/8"
                         title="Show / Hide QR Code"
                       >
@@ -178,6 +251,13 @@ export default function MyTickets() {
                   </button>
                 )}
 
+                {reg.status === 'confirmed' && reg.ticket_id && (
+                  <button onClick={() => handleDownloadTicketJpeg(reg)} className="btn-outline w-full">
+                    <Download className="h-4 w-4" />
+                    <span>Download Ticket JPEG</span>
+                  </button>
+                )}
+
                 {reg.status === 'confirmed' && reg.event_status === 'completed' && (
                   <button
                     onClick={() => handleDownloadCertificate(reg.event_id, reg.event_title)}
@@ -199,6 +279,18 @@ export default function MyTickets() {
           ))}
         </div>
       )}
+      <div className="absolute left-[-9999px] top-[-9999px]">
+        {registrations.filter((reg) => reg.status === 'confirmed' && ticketDetails[reg.ticket_id]).map((reg) => (
+          <QRCodeCanvas
+            key={`hidden-qr-${reg.ticket_id}`}
+            id={`hidden-qr-${reg.ticket_id}`}
+            value={ticketDetails[reg.ticket_id]}
+            size={240}
+            level="H"
+            includeMargin={true}
+          />
+        ))}
+      </div>
     </div>
   );
 }

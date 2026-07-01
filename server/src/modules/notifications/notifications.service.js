@@ -2,7 +2,17 @@ const db = require('../../config/db');
 
 const listMyNotifications = async (userId) => {
   const res = await db.query(
-    'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC',
+    `SELECT
+       n.*,
+       e.title AS event_title,
+       CASE
+         WHEN n.event_id IS NOT NULL THEN '/event/' || n.event_id::text
+         ELSE '/dashboard'
+       END AS target_path
+     FROM notifications n
+     LEFT JOIN events e ON e.id = n.event_id
+     WHERE n.user_id = $1
+     ORDER BY n.created_at DESC`,
     [userId]
   );
   return res.rows;

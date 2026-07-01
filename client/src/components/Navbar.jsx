@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Bell, LogOut, User as UserIcon, Menu, X, Sparkles } from 'lucide-react';
@@ -10,22 +10,34 @@ export default function Navbar() {
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const fetchNotifications = async () => {
-    if (!user) return;
-    try {
-      const res = await api.get('/notifications');
-      setNotifications(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
+    if (!user) return;
+
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      try {
+        const res = await api.get('/notifications');
+        if (!cancelled) {
+          setNotifications(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    void loadNotifications();
+    const interval = setInterval(() => {
+      void loadNotifications();
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [user]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -44,8 +56,18 @@ export default function Navbar() {
     navigate('/login');
   };
 
+  const openNotification = async (notification) => {
+    try {
+      if (!notification.is_read) {
+        await markAsRead(notification.id);
+      }
+    } finally {
+      setShowNotifications(false);
+      navigate(notification.target_path || '/dashboard');
+    }
+  };
+
   const isOrganizer = user?.roles?.includes('organizer');
-  const isAdmin = user?.roles?.includes('admin');
 
   const closeMenu = () => setMobileMenuOpen(false);
   const linkClass = (path) => `rounded-full px-3 py-2 text-sm font-medium transition-all duration-300 ease-out ${
@@ -71,9 +93,8 @@ export default function Navbar() {
           <nav className="hidden items-center gap-2 md:flex">
             <Link to="/" className={linkClass('/')} onClick={closeMenu}>Home</Link>
             <Link to="/events" className={linkClass('/events')} onClick={closeMenu}>Events</Link>
+            {user && <Link to="/dashboard" className={linkClass('/dashboard')} onClick={closeMenu}>Dashboard</Link>}
             {user && !isOrganizer && !isAdmin && <Link to="/tickets" className={linkClass('/tickets')} onClick={closeMenu}>My Tickets</Link>}
-            {user && isOrganizer && !isAdmin && <Link to="/dashboard" className={linkClass('/dashboard')} onClick={closeMenu}>Organizer Dashboard</Link>}
-            {user && isAdmin && <Link to="/admin" className={linkClass('/admin')} onClick={closeMenu}>Admin Panel</Link>}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -101,16 +122,16 @@ export default function Navbar() {
                           <div className="px-4 py-4 text-center text-sm text-muted">No notifications yet.</div>
                         ) : (
                           notifications.map((n) => (
-                            <div
+                            <button
                               key={n.id}
-                              onClick={() => !n.is_read && markAsRead(n.id)}
-                              className={`cursor-pointer px-4 py-3 text-sm transition-all duration-300 hover:bg-primary/6 ${
+                              onClick={() => openNotification(n)}
+                              className={`block w-full px-4 py-3 text-left text-sm transition-all duration-300 hover:bg-primary/6 ${
                                 n.is_read ? 'bg-surface text-muted' : 'bg-primary/10 text-ink'
                               }`}
                             >
                               <p className="line-clamp-2">{n.message}</p>
                               <span className="mt-1 block text-xs text-muted/70">{new Date(n.created_at).toLocaleDateString()}</span>
-                            </div>
+                            </button>
                           ))
                         )}
                       </div>
@@ -118,12 +139,19 @@ export default function Navbar() {
                   )}
                 </div>
 
-                <div className="hidden items-center gap-2 rounded-full border border-border bg-surface/80 px-3 py-1.5 shadow-sm transition-all duration-300 hover:border-primary/20 sm:flex">
-                  <UserIcon className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-ink">{user.name}</span>
-                  <button onClick={handleLogout} className="rounded-full p-1.5 text-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger" aria-label="Logout">
-                    <LogOut className="h-4 w-4" />
+                <div className="relative hidden sm:block">
+                  <button onClick={() => setShowProfileMenu((prev) => !prev)} className="flex items-center gap-2 rounded-full border border-border bg-surface/80 px-3 py-1.5 shadow-sm transition-all duration-300 hover:border-primary/20">
+                    <UserIcon className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-ink">{user.name}</span>
                   </button>
+
+                  {showProfileMenu && (
+                    <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_26px_60px_-30px_rgba(93,56,145,0.28)] animate-soft-pop">
+                      <button onClick={() => { setShowProfileMenu(false); navigate('/dashboard'); }} className="block w-full px-4 py-3 text-left text-sm text-ink transition-all duration-300 hover:bg-primary/6">Dashboard</button>
+                      <button onClick={() => { setShowProfileMenu(false); navigate('/tickets'); }} className="block w-full px-4 py-3 text-left text-sm text-ink transition-all duration-300 hover:bg-primary/6">My Tickets</button>
+                      <button onClick={handleLogout} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-danger transition-all duration-300 hover:bg-danger/8"><LogOut className="h-4 w-4" /><span>Logout</span></button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -144,9 +172,8 @@ export default function Navbar() {
             <div className="flex flex-col gap-3">
               <Link to="/" onClick={closeMenu} className={linkClass('/')}>Home</Link>
               <Link to="/events" onClick={closeMenu} className={linkClass('/events')}>Events</Link>
+              {user && <Link to="/dashboard" onClick={closeMenu} className={linkClass('/dashboard')}>Dashboard</Link>}
               {user && !isOrganizer && !isAdmin && <Link to="/tickets" onClick={closeMenu} className={linkClass('/tickets')}>My Tickets</Link>}
-              {user && isOrganizer && !isAdmin && <Link to="/dashboard" onClick={closeMenu} className={linkClass('/dashboard')}>Organizer Dashboard</Link>}
-              {user && isAdmin && <Link to="/admin" onClick={closeMenu} className={linkClass('/admin')}>Admin Panel</Link>}
               {!user ? (
                 <div className="flex gap-2 pt-2">
                   <Link to="/login" onClick={closeMenu} className="btn-outline w-full justify-center">Login</Link>

@@ -85,7 +85,12 @@ const rejectEvent = async (req, res, next) => {
 const getPlatformAnalytics = async (req, res, next) => {
   try {
     const result = await adminService.getPlatformAnalytics();
-    res.status(200).json(result);
+    res.status(200).json({
+      ...result,
+      totalUsers: result.total_users,
+      totalEvents: result.total_events,
+      totalRegistrations: result.total_registrations
+    });
   } catch (error) {
     next(error);
   }

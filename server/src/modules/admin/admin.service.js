@@ -58,8 +58,8 @@ const forceCancelEvent = async (eventId) => {
   const message = `Event "${event.title}" has been force-cancelled by platform administrator.`;
   for (const row of registrantsRes.rows) {
     await db.query(
-      'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
-      [row.user_id, message, 'event_cancelled']
+      'INSERT INTO notifications (user_id, message, type, event_id) VALUES ($1, $2, $3, $4)',
+      [row.user_id, message, 'event_cancelled', eventId]
     );
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../api';
@@ -27,21 +27,23 @@ export default function CheckInScanner() {
         let payload;
         try {
           payload = JSON.parse(decodedText);
-        } catch (e) {
+        } catch {
           payload = { ticketCode: decodedText };
         }
 
         if (payload.ticketCode && payload.signature) {
           const res = await api.post('/checkin/scan', {
             ticketCode: payload.ticketCode,
-            signature: payload.signature
+            signature: payload.signature,
+            eventId
           });
           setStatus('success');
           setAttendee(res.data.attendeeName);
           setMessage(`Scanned Code: ${res.data.ticketCode}`);
         } else {
           const res = await api.post('/checkin/manual', {
-            ticketCode: payload.ticketCode || decodedText
+            ticketCode: payload.ticketCode || decodedText,
+            eventId
           });
           setStatus('success');
           setAttendee(res.data.attendeeName);
@@ -53,7 +55,7 @@ export default function CheckInScanner() {
       }
     };
 
-    const onScanError = (err) => {
+    const onScanError = () => {
       // Quietly ignore scan matching errors
     };
 
@@ -72,7 +74,8 @@ export default function CheckInScanner() {
     setAttendee('');
     try {
       const res = await api.post('/checkin/manual', {
-        ticketCode: manualCode.trim()
+        ticketCode: manualCode.trim(),
+        eventId
       });
       setStatus('success');
       setAttendee(res.data.attendeeName);

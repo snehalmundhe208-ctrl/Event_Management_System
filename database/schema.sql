@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     type VARCHAR(100) NOT NULL,
+    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -102,8 +103,26 @@ CREATE TABLE IF NOT EXISTS feedback (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
+    photo_url VARCHAR(512),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_user_event_feedback UNIQUE (user_id, event_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    parent_id UUID REFERENCES event_comments(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_follows (
+    follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    following_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_id, following_id),
+    CONSTRAINT no_self_follow CHECK (follower_id <> following_id)
 );
 
 CREATE TABLE IF NOT EXISTS gallery_items (
@@ -111,7 +130,16 @@ CREATE TABLE IF NOT EXISTS gallery_items (
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     photo_url VARCHAR(512) NOT NULL,
+    upload_phase VARCHAR(20) NOT NULL DEFAULT 'post',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS comment_hearts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    comment_id UUID NOT NULL REFERENCES event_comments(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_comment_heart UNIQUE (comment_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS gallery_likes (
@@ -138,5 +166,10 @@ CREATE INDEX IF NOT EXISTS idx_registrations_event ON registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_user ON registrations(user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_code ON tickets(ticket_code);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_event ON notifications(event_id);
 CREATE INDEX IF NOT EXISTS idx_feedback_event ON feedback(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_comments_event ON event_comments(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_comments_parent ON event_comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_gallery_items_event ON gallery_items(event_id);
+CREATE INDEX IF NOT EXISTS idx_comment_hearts_comment ON comment_hearts(comment_id);

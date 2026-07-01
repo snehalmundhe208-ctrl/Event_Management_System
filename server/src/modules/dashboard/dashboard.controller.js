@@ -1,5 +1,14 @@
 const dashboardService = require('./dashboard.service');
 
+const getUserDashboard = async (req, res, next) => {
+  try {
+    const result = await dashboardService.getUserDashboard(req.user.id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getEventStats = async (req, res, next) => {
   try {
     const result = await dashboardService.getEventStats(req.params.eventId, req.user.id);
@@ -21,6 +30,7 @@ const exportRegistrantsCsv = async (req, res, next) => {
 };
 
 module.exports = {
+  getUserDashboard,
   getEventStats,
   exportRegistrantsCsv
 };

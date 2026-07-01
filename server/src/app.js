@@ -13,6 +13,8 @@ const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
 const feedbackRoutes = require('./modules/feedback/feedback.routes');
 const galleryRoutes = require('./modules/gallery/gallery.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const commentsRoutes = require('./modules/comments/comments.routes');
+const followsRoutes = require('./modules/follows/follows.routes');
 
 const app = express();
 
@@ -47,6 +49,8 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
 app.use('/api/v1/gallery', galleryRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/events/:eventId/comments', commentsRoutes);
+app.use('/api/v1/follows', followsRoutes);
 
 app.use(errorHandler);
 
