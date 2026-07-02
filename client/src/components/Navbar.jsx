@@ -68,6 +68,7 @@ export default function Navbar() {
   };
 
   const isOrganizer = user?.roles?.includes('organizer');
+  const isAdmin = user?.roles?.includes('admin');
 
   const closeMenu = () => setMobileMenuOpen(false);
   const linkClass = (path) => `rounded-full px-3 py-2 text-sm font-medium transition-all duration-300 ease-out ${
@@ -100,7 +101,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <div className="relative hidden sm:block">
+                <div className="relative">
                   <button
                     onClick={() => setShowNotifications((prev) => !prev)}
                     className="relative rounded-full border border-border/60 bg-surface/75 p-2 text-muted transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/8 hover:text-primary"
@@ -139,7 +140,7 @@ export default function Navbar() {
                   )}
                 </div>
 
-                <div className="relative hidden sm:block">
+                <div className="relative">
                   <button onClick={() => setShowProfileMenu((prev) => !prev)} className="flex items-center gap-2 rounded-full border border-border bg-surface/80 px-3 py-1.5 shadow-sm transition-all duration-300 hover:border-primary/20">
                     <UserIcon className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-ink">{user.name}</span>

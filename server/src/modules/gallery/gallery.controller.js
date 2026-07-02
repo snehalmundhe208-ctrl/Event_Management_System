@@ -52,7 +52,10 @@ const uploadPhoto = async (req, res, next) => {
       return res.status(400).json({ message: 'Photo file is required' });
     }
     const { eventId } = uploadPhotoSchema.parse(req.body);
-    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/attendee-gallery');
+    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/attendee-gallery', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype
+    });
     const result = await galleryService.uploadPhoto(req.user, eventId, secureUrl);
     res.status(201).json(result);
   } catch (error) {

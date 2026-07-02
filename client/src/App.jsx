@@ -73,7 +73,7 @@ export default function App() {
           <Route path="/checkin/:eventId" element={<MainLayout><ProtectedRoute allowedRoles={['organizer', 'admin']}><CheckInScanner /></ProtectedRoute></MainLayout>} />
           <Route path="/feedback/:eventId" element={<MainLayout><ProtectedRoute><FeedbackSubmission /></ProtectedRoute></MainLayout>} />
           <Route path="/gallery/:eventId" element={<MainLayout><EventGallery /></MainLayout>} />
-          <Route path="/admin" element={<MainLayout><ProtectedRoute allowedRoles={['admin']}><OrganizerDashboard /></ProtectedRoute></MainLayout>} />
+          <Route path="/admin" element={<MainLayout><ProtectedRoute allowedRoles={['admin']}><Navigate to="/dashboard" replace /></ProtectedRoute></MainLayout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

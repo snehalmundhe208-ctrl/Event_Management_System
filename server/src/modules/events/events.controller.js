@@ -129,7 +129,10 @@ const uploadBanner = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Banner file is required' });
     }
-    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/banners');
+    const secureUrl = await uploadBuffer(req.file.buffer, 'event-management/banners', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype
+    });
     const result = await eventsService.uploadBanner(req.params.id, secureUrl, req.user);
     res.status(200).json(result);
   } catch (error) {
@@ -143,9 +146,10 @@ const uploadGallery = async (req, res, next) => {
       return res.status(400).json({ message: 'At least one gallery image is required' });
     }
 
-    const photoUrls = await Promise.all(
-      req.files.map((file) => uploadBuffer(file.buffer, 'event-management/galleries'))
-    );
+    const photoUrls = await Promise.all(req.files.map((file) => uploadBuffer(file.buffer, 'event-management/galleries', {
+      originalname: file.originalname,
+      mimetype: file.mimetype
+    })));
 
     const result = await eventsService.uploadGallery(req.params.id, photoUrls, req.user);
     res.status(200).json(result);

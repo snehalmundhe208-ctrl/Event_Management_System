@@ -75,7 +75,7 @@ export default function EventGallery() {
           filename: `gallery-${item.id}`,
           title: event?.title || 'Event Gallery'
         },
-        responseType
+        responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');

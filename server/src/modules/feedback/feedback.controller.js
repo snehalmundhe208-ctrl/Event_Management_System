@@ -18,7 +18,10 @@ const submitFeedback = async (req, res, next) => {
     let photoUrl = null;
 
     if (req.file) {
-      photoUrl = await uploadBuffer(req.file.buffer, 'event-management/feedback');
+      photoUrl = await uploadBuffer(req.file.buffer, 'event-management/feedback', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype
+      });
     }
 
     const result = await feedbackService.submitFeedback(req.user.id, { ...validated, eventId, photoUrl });
