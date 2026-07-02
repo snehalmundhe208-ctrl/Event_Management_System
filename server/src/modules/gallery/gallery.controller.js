@@ -17,6 +17,11 @@ const exportSchema = z.object({
   title: z.string().optional()
 });
 
+const deleteSchema = z.object({
+  eventId: z.string().uuid().optional(),
+  photoUrl: z.string().min(1).optional()
+});
+
 const fetchImageBuffer = async (photoUrl) => {
   if (photoUrl.startsWith('/uploads/')) {
     const filePath = path.join(__dirname, '../../../', photoUrl.replace(/^\//, ''));
@@ -68,7 +73,7 @@ const uploadPhoto = async (req, res, next) => {
 
 const listGalleryItems = async (req, res, next) => {
   try {
-    const result = await galleryService.listGalleryItems(req.params.eventId, req.query.userId);
+    const result = await galleryService.listGalleryItems(req.params.eventId, req.user);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -80,6 +85,22 @@ const likeGalleryItem = async (req, res, next) => {
     const result = await galleryService.likeGalleryItem(req.params.itemId, req.user.id);
     res.status(200).json(result);
   } catch (error) {
+    next(error);
+  }
+};
+
+const deleteGalleryItem = async (req, res, next) => {
+  try {
+    const { eventId, photoUrl } = deleteSchema.parse(req.query || {});
+    const result = await galleryService.deleteGalleryItem(
+      { itemId: req.params.itemId, eventId, photoUrl },
+      req.user
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+    }
     next(error);
   }
 };
@@ -129,6 +150,7 @@ module.exports = {
   uploadPhoto,
   listGalleryItems,
   likeGalleryItem,
+  deleteGalleryItem,
   downloadGalleryPdf,
   downloadGalleryJpeg
 };

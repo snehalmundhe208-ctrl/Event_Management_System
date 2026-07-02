@@ -110,7 +110,14 @@ const listEvents = async (filters, user) => {
 
   queryText += ' GROUP BY e.id, c.name, u.name, fr.follower_count, fs.is_following, rt.average_rating, rt.total_ratings, cm.comment_count ORDER BY e.start_date ASC';
   const res = await db.query(queryText, params);
-  return res.rows;
+  if (isAdmin || isOwnerScope) return res.rows;
+  return res.rows.map((row) => {
+    const isOwner = Boolean(user?.id) && row.organizer_id === user.id;
+    if (row.status !== 'completed' && !isOwner) {
+      return { ...row, gallery_urls: [] };
+    }
+    return row;
+  });
 };
 
 const getEvent = async (id, user) => {
@@ -166,6 +173,10 @@ const getEvent = async (id, user) => {
     const error = new Error('Event not found');
     error.statusCode = 404;
     throw error;
+  }
+
+  if (event.status !== 'completed' && !isAdmin && !isOrganizer) {
+    event.gallery_urls = [];
   }
 
   return event;

@@ -121,13 +121,50 @@ const rejectEvent = async (eventId, reason) => {
 };
 
 const getPlatformAnalytics = async () => {
-  const res = await db.query(`
-    SELECT
-      (SELECT COUNT(*)::int FROM users) as total_users,
-      (SELECT COUNT(*)::int FROM events) as total_events,
-      (SELECT COUNT(*)::int FROM registrations) as total_registrations
-  `);
-  return res.rows[0];
+  const [countsRes, eventsByStatusRes, usersByRoleRes, bookingsOverTimeRes] = await Promise.all([
+    db.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM users) as total_users,
+        (SELECT COUNT(*)::int FROM events) as total_events,
+        (SELECT COUNT(*)::int FROM registrations) as total_registrations
+    `),
+    db.query(
+      `SELECT status, COUNT(*)::int AS count
+       FROM events
+       GROUP BY status
+       ORDER BY status ASC`
+    ),
+    db.query(
+      `SELECT role, COUNT(*)::int AS count
+       FROM (
+         SELECT UNNEST(roles) AS role
+         FROM users
+       ) r
+       GROUP BY role
+       ORDER BY role ASC`
+    ),
+    db.query(
+      `WITH days AS (
+         SELECT generate_series(
+           date_trunc('day', CURRENT_DATE - INTERVAL '29 days'),
+           date_trunc('day', CURRENT_DATE),
+           INTERVAL '1 day'
+         ) AS day
+       )
+       SELECT to_char(days.day, 'YYYY-MM-DD') AS day, COALESCE(COUNT(r.id), 0)::int AS count
+       FROM days
+       LEFT JOIN registrations r ON date_trunc('day', r.created_at) = days.day
+       GROUP BY days.day
+       ORDER BY days.day ASC`
+    )
+  ]);
+
+  return {
+    ...countsRes.rows[0],
+    events_by_status: eventsByStatusRes.rows,
+    users_by_role: usersByRoleRes.rows,
+    bookings_over_time: bookingsOverTimeRes.rows
+  };
 };
 
 module.exports = {

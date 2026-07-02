@@ -71,6 +71,10 @@ const ticketSignature = (value) => crypto.createHmac('sha256', process.env.TICKE
 const ensureUser = async (email, name, roles) => {
   const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
   if (existing.rows.length > 0) {
+    await db.query(
+      'UPDATE users SET name = COALESCE($2, name), roles = COALESCE($3::varchar[], roles), updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [existing.rows[0].id, name || null, roles || null]
+    );
     return existing.rows[0].id;
   }
 
@@ -97,6 +101,223 @@ const ensureLookupRows = async (table, names) => {
   }
 
   return ids;
+};
+
+const normalizeUserRoles = async ({ adminId, organizerIds }) => {
+  const res = await db.query('SELECT id FROM users ORDER BY created_at ASC, id ASC');
+  const userIds = res.rows.map((row) => row.id);
+  if (userIds.length === 0) return;
+
+  const desiredAdmin = adminId || userIds[0];
+  const desiredOrganizers = (organizerIds || []).filter((id) => id && id !== desiredAdmin).slice(0, 3);
+  const organizerSet = new Set(desiredOrganizers);
+
+  for (const userId of userIds) {
+    let roles = ['attendee'];
+    if (userId === desiredAdmin) roles = ['admin'];
+    else if (organizerSet.has(userId)) roles = ['organizer'];
+    await db.query('UPDATE users SET roles = $2::varchar[], updated_at = CURRENT_TIMESTAMP WHERE id = $1', [userId, roles]);
+  }
+};
+
+const normalizeEventStatuses = async () => {
+  const res = await db.query('SELECT id FROM events ORDER BY created_at ASC, id ASC');
+  const events = res.rows;
+  const total = events.length;
+  if (!total) return;
+
+  const completedCount = Math.max(1, Math.floor(total / 3));
+  const publishedCount = Math.max(1, Math.floor(total / 3));
+
+  const now = Date.now();
+  for (let i = 0; i < events.length; i += 1) {
+    const eventId = events[i].id;
+    let status = 'draft';
+    if (i < completedCount) status = 'completed';
+    else if (i < completedCount + publishedCount) status = 'published';
+
+    let startDate = new Date(now + (i + 2) * 24 * 60 * 60 * 1000);
+    let endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+    if (status === 'completed') {
+      endDate = new Date(now - (i + 2) * 24 * 60 * 60 * 1000);
+      startDate = new Date(endDate.getTime() - 3 * 60 * 60 * 1000);
+    }
+
+    await db.query(
+      `UPDATE events
+       SET status = $2::varchar,
+           start_date = $3,
+           end_date = $4,
+           approved_at = CASE WHEN $2::varchar = 'published' THEN COALESCE(approved_at, CURRENT_TIMESTAMP) ELSE approved_at END,
+           approved_by = CASE WHEN $2::varchar = 'published' THEN COALESCE(approved_by, organizer_id) ELSE approved_by END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [eventId, status, startDate.toISOString(), endDate.toISOString()]
+    );
+  }
+};
+
+const normalizeRegistrationsCreatedAt = async () => {
+  await db.query(
+    `WITH ordered AS (
+       SELECT id, ROW_NUMBER() OVER (ORDER BY created_at ASC, id ASC) AS rn
+       FROM registrations
+     )
+     UPDATE registrations r
+     SET created_at = (CURRENT_TIMESTAMP
+       - ((ordered.rn - 1) % 30) * INTERVAL '1 day'
+       - ((ordered.rn - 1) % 24) * INTERVAL '1 hour'),
+       updated_at = CURRENT_TIMESTAMP
+     FROM ordered
+     WHERE r.id = ordered.id`
+  );
+};
+
+const ensureTicketsForRegistrations = async () => {
+  const missing = await db.query(
+    `SELECT r.id
+     FROM registrations r
+     LEFT JOIN tickets t ON t.registration_id = r.id
+     WHERE t.id IS NULL
+     ORDER BY r.created_at ASC, r.id ASC`
+  );
+
+  for (const row of missing.rows) {
+    const code = ticketCode();
+    await db.query(
+      `INSERT INTO tickets (registration_id, ticket_code, hmac_signature)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (ticket_code) DO NOTHING`,
+      [row.id, code, ticketSignature(code)]
+    );
+  }
+};
+
+const ensureRecentRegistrations = async ({ minCount, userIds, eventIds }) => {
+  const countRes = await db.query('SELECT COUNT(*)::int AS count FROM registrations');
+  const current = countRes.rows[0]?.count || 0;
+  if (current >= minCount) return;
+
+  const needed = minCount - current;
+  const now = Date.now();
+  for (let i = 0; i < needed; i += 1) {
+    const userId = pick(userIds, i);
+    const eventId = pick(eventIds, i + 3);
+    const createdAt = new Date(now - (i % 30) * 24 * 60 * 60 * 1000 - (i % 12) * 60 * 60 * 1000).toISOString();
+    await db.query(
+      `INSERT INTO registrations (event_id, user_id, status, created_at, updated_at)
+       VALUES ($1, $2, 'confirmed', $3, $3)
+       ON CONFLICT (user_id, event_id) DO NOTHING`,
+      [eventId, userId, createdAt]
+    );
+  }
+};
+
+const ensureCheckInsForCompletedEvents = async ({ fallbackScannerId }) => {
+  const res = await db.query(
+    `SELECT t.id AS ticket_id, e.organizer_id
+     FROM tickets t
+     JOIN registrations r ON r.id = t.registration_id
+     JOIN events e ON e.id = r.event_id
+     LEFT JOIN check_ins ci ON ci.ticket_id = t.id
+     WHERE ci.id IS NULL AND e.status = 'completed'
+     ORDER BY r.created_at DESC, t.id ASC`
+  );
+
+  for (const row of res.rows) {
+    await db.query(
+      `INSERT INTO check_ins (ticket_id, scanned_by)
+       SELECT $1, $2
+       WHERE NOT EXISTS (SELECT 1 FROM check_ins WHERE ticket_id = $1)`,
+      [row.ticket_id, row.organizer_id || fallbackScannerId || null]
+    );
+  }
+};
+
+const ensureAdminAttended = async ({ adminId }) => {
+  const eventRes = await db.query(
+    "SELECT id, organizer_id FROM events WHERE status = 'completed' ORDER BY end_date DESC, id ASC LIMIT 1"
+  );
+  if (eventRes.rows.length === 0) return;
+
+  const eventId = eventRes.rows[0].id;
+  const scannerId = eventRes.rows[0].organizer_id || adminId;
+
+  const regRes = await db.query(
+    `INSERT INTO registrations (event_id, user_id, status)
+     VALUES ($1, $2, 'confirmed')
+     ON CONFLICT (user_id, event_id) DO UPDATE SET status = EXCLUDED.status
+     RETURNING id`,
+    [eventId, adminId]
+  );
+  const registrationId = regRes.rows[0].id;
+
+  const ticketExisting = await db.query('SELECT id FROM tickets WHERE registration_id = $1 LIMIT 1', [registrationId]);
+  let ticketId = ticketExisting.rows[0]?.id || null;
+  if (!ticketId) {
+    const code = ticketCode();
+    const inserted = await db.query(
+      `INSERT INTO tickets (registration_id, ticket_code, hmac_signature)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [registrationId, code, ticketSignature(code)]
+    );
+    ticketId = inserted.rows[0].id;
+  }
+
+  await db.query(
+    `INSERT INTO check_ins (ticket_id, scanned_by)
+     SELECT $1, $2
+     WHERE NOT EXISTS (SELECT 1 FROM check_ins WHERE ticket_id = $1)`,
+    [ticketId, scannerId]
+  );
+};
+
+const ensureSeedSocialData = async ({ adminId, organizerIds }) => {
+  await db.query("DELETE FROM event_comments WHERE content LIKE 'Seed:%'");
+
+  const eventsRes = await db.query('SELECT id FROM events ORDER BY created_at ASC, id ASC');
+  const usersRes = await db.query('SELECT id FROM users ORDER BY created_at ASC, id ASC');
+  const eventIds = eventsRes.rows.map((r) => r.id);
+  const userIds = usersRes.rows.map((r) => r.id);
+  if (eventIds.length === 0 || userIds.length === 0) return;
+
+  const followTargets = (organizerIds || []).filter((id) => id && id !== adminId);
+  for (let i = 0; i < Math.min(userIds.length, 12); i += 1) {
+    const followerId = userIds[i];
+    const followingId = pick(followTargets, i) || adminId;
+    if (followerId && followingId && followerId !== followingId) {
+      await db.query(
+        'INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [followerId, followingId]
+      );
+    }
+  }
+
+  for (let i = 0; i < 20; i += 1) {
+    const eventId = pick(eventIds, i);
+    const commenterId = pick(userIds, i + 2);
+    await db.query(
+      `INSERT INTO event_comments (event_id, user_id, content, created_at)
+       VALUES ($1, $2, $3, CURRENT_TIMESTAMP - ($4::int % 20) * INTERVAL '1 day')`,
+      [eventId, commenterId, `Seed: Comment ${i + 1}`, i]
+    );
+  }
+
+  const completedEventRes = await db.query("SELECT id FROM events WHERE status = 'completed' ORDER BY end_date DESC, id ASC LIMIT 1");
+  const reviewEventId = completedEventRes.rows[0]?.id || eventIds[0];
+
+  for (let i = 0; i < 12; i += 1) {
+    const reviewerId = i === 0 ? adminId : pick(userIds, i + 3);
+    const createdAt = new Date(Date.now() - (i % 30) * 24 * 60 * 60 * 1000).toISOString();
+    await db.query(
+      `INSERT INTO feedback (event_id, user_id, rating, comment, created_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, event_id)
+       DO UPDATE SET rating = EXCLUDED.rating, comment = EXCLUDED.comment, created_at = EXCLUDED.created_at`,
+      [reviewEventId, reviewerId, 4 + (i % 2), `Seed: Review ${i + 1}`, createdAt]
+    );
+  }
 };
 
 const buildEventPayload = (index, categoryMap, organizerIds) => {
@@ -308,6 +529,19 @@ const seedEvents = async () => {
       }
     }
   }
+
+  await normalizeUserRoles({ adminId, organizerIds });
+  await normalizeEventStatuses();
+  const allUsersRes = await db.query('SELECT id FROM users ORDER BY created_at ASC, id ASC');
+  const allEventsRes = await db.query('SELECT id FROM events ORDER BY created_at ASC, id ASC');
+  const allUserIds = allUsersRes.rows.map((row) => row.id);
+  const allEventIds = allEventsRes.rows.map((row) => row.id);
+  await ensureRecentRegistrations({ minCount: 45, userIds: allUserIds, eventIds: allEventIds });
+  await normalizeRegistrationsCreatedAt();
+  await ensureTicketsForRegistrations();
+  await ensureCheckInsForCompletedEvents({ fallbackScannerId: adminId });
+  await ensureAdminAttended({ adminId });
+  await ensureSeedSocialData({ adminId, organizerIds });
 
   console.log('Seeded 36 events with social data, banners, and gallery images.');
 };

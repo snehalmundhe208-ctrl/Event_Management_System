@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, Download, Heart, Upload, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Download, Heart, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { toAssetUrl } from '../utils/assets';
 
 export default function EventGallery() {
@@ -24,10 +24,17 @@ export default function EventGallery() {
         if (cancelled) return;
         setEvent(eventRes.data);
 
-        const params = user ? { userId: user.id } : {};
-        const galleryRes = await api.get(`/gallery/event/${eventId}`, { params });
-        if (cancelled) return;
-        setItems(galleryRes.data);
+        const canView = eventRes.data?.status === 'completed'
+          || user?.roles?.includes('admin')
+          || (user?.roles?.includes('organizer') && user?.id === eventRes.data?.organizer_id);
+
+        if (canView) {
+          const galleryRes = await api.get(`/gallery/event/${eventId}`);
+          if (cancelled) return;
+          setItems(galleryRes.data);
+        } else {
+          setItems([]);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,6 +51,18 @@ export default function EventGallery() {
     };
   }, [eventId, user]);
 
+  const canView = event?.status === 'completed'
+    || user?.roles?.includes('admin')
+    || (user?.roles?.includes('organizer') && user?.id === event?.organizer_id);
+
+  const isAdmin = user?.roles?.includes('admin');
+
+  const refreshGallery = async () => {
+    if (!canView) return;
+    const galleryRes = await api.get(`/gallery/event/${eventId}`);
+    setItems(galleryRes.data);
+  };
+
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -55,9 +74,7 @@ export default function EventGallery() {
       await api.post('/gallery', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      const params = user ? { userId: user.id } : {};
-      const galleryRes = await api.get(`/gallery/event/${eventId}`, { params });
-      setItems(galleryRes.data);
+      await refreshGallery();
     } catch (err) {
       alert(err.response?.data?.message || 'Photo upload failed');
     } finally {
@@ -97,11 +114,20 @@ export default function EventGallery() {
     }
     try {
       await api.post(`/gallery/item/${itemId}/like`);
-      const params = user ? { userId: user.id } : {};
-      const galleryRes = await api.get(`/gallery/event/${eventId}`, { params });
-      setItems(galleryRes.data);
+      await refreshGallery();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteItem = async (item) => {
+    if (!isAdmin) return;
+    try {
+      const params = item.id?.startsWith('static-') ? { eventId, photoUrl: item.photo_url } : undefined;
+      await api.delete(`/gallery/item/${item.id}`, params ? { params } : undefined);
+      await refreshGallery();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -141,7 +167,12 @@ export default function EventGallery() {
         )}
       </div>
 
-      {items.length === 0 ? (
+      {!canView ? (
+        <div className="card entrance-card py-16 text-center text-muted">
+          <ImageIcon className="mx-auto mb-4 h-12 w-12 text-primary/30" />
+          <p>Gallery photos will be visible after the event is completed.</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="card entrance-card py-16 text-center text-muted">
           <ImageIcon className="mx-auto mb-4 h-12 w-12 text-primary/30" />
           <p>No photos have been uploaded to this gallery yet.</p>
@@ -171,6 +202,11 @@ export default function EventGallery() {
                     <button onClick={() => handleLikeItem(item.id)} className="flex items-center space-x-1.5 text-danger transition-all duration-300 hover:scale-105">
                       <Heart className={`h-4 w-4 ${item.is_liked ? 'fill-current' : ''}`} />
                       <span className="text-xs font-bold text-ink">{item.likes_count}</span>
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button onClick={() => handleDeleteItem(item)} className="rounded-full bg-bg-soft p-2 text-muted transition-all duration-300 hover:bg-danger/10 hover:text-danger" title="Delete">
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                   <button onClick={() => handleDownloadExport(item, 'pdf')} className="rounded-full bg-bg-soft p-2 text-muted transition-all duration-300 hover:bg-primary/8 hover:text-primary" title="Download PDF">

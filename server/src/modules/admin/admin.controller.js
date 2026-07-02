@@ -89,7 +89,10 @@ const getPlatformAnalytics = async (req, res, next) => {
       ...result,
       totalUsers: result.total_users,
       totalEvents: result.total_events,
-      totalRegistrations: result.total_registrations
+      totalRegistrations: result.total_registrations,
+      eventsByStatus: result.events_by_status,
+      usersByRole: result.users_by_role,
+      bookingsOverTime: result.bookings_over_time
     });
   } catch (error) {
     next(error);

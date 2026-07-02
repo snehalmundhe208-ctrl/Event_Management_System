@@ -20,12 +20,6 @@ const uploadPhoto = async (user, eventId, photoUrl) => {
   const isOrganizer = user.roles.includes('organizer');
   const isOwner = event.organizer_id === user.id;
 
-  if (['cancelled', 'rejected'].includes(event.status)) {
-    const error = new Error('Gallery uploads are disabled for this event');
-    error.statusCode = 400;
-    throw error;
-  }
-
   if (event.status === 'draft' && !isAdmin && !isOwner) {
     const error = new Error('Only the organizer or admin can upload before this event is published');
     error.statusCode = 403;
@@ -60,10 +54,10 @@ const uploadPhoto = async (user, eventId, photoUrl) => {
   return res.rows[0];
 };
 
-const listGalleryItems = async (eventId, currentUserId) => {
+const listGalleryItems = async (eventId, currentUser) => {
   const [eventRes, itemsRes] = await Promise.all([
     db.query(
-      `SELECT e.gallery_urls, u.name AS organizer_name
+      `SELECT e.gallery_urls, e.organizer_id, e.status, u.name AS organizer_name
        FROM events e
        JOIN users u ON u.id = e.organizer_id
        WHERE e.id = $1`,
@@ -79,7 +73,7 @@ const listGalleryItems = async (eventId, currentUserId) => {
      WHERE gi.event_id = $1
      GROUP BY gi.id, u.name
      ORDER BY gi.created_at DESC`,
-      [eventId, currentUserId || null]
+      [eventId, currentUser?.id || null]
     )
   ]);
 
@@ -88,6 +82,14 @@ const listGalleryItems = async (eventId, currentUserId) => {
     const error = new Error('Event not found');
     error.statusCode = 404;
     throw error;
+  }
+
+  const isAdmin = Boolean(currentUser?.roles?.includes('admin'));
+  const isOrganizerOwner = Boolean(currentUser?.roles?.includes('organizer')) && currentUser?.id === event.organizer_id;
+  const canView = event.status === 'completed' || isAdmin || isOrganizerOwner;
+
+  if (!canView) {
+    return [];
   }
 
   const staticItems = (Array.isArray(event.gallery_urls) ? event.gallery_urls : []).map((photoUrl, index) => ({
@@ -105,7 +107,7 @@ const listGalleryItems = async (eventId, currentUserId) => {
 
   const dynamicItems = itemsRes.rows.map((item) => ({
     ...item,
-    can_like: true
+    can_like: Boolean(currentUser) && event.status === 'completed'
   }));
 
   return [...dynamicItems, ...staticItems];
@@ -136,8 +138,59 @@ const likeGalleryItem = async (itemId, userId) => {
   }
 };
 
+const uuidLike = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+
+const deleteGalleryItem = async ({ itemId, eventId, photoUrl }, user) => {
+  const isAdmin = Boolean(user?.roles?.includes('admin'));
+  if (!isAdmin) {
+    const error = new Error('Forbidden');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (uuidLike(itemId)) {
+    const existingRes = await db.query('SELECT id FROM gallery_items WHERE id = $1', [itemId]);
+    if (existingRes.rows.length === 0) {
+      const error = new Error('Gallery item not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await db.query('DELETE FROM gallery_items WHERE id = $1', [itemId]);
+    return { deleted: true };
+  }
+
+  if (!eventId || !photoUrl) {
+    const error = new Error('eventId and photoUrl are required for deleting static gallery items');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const eventRes = await db.query('SELECT id FROM events WHERE id = $1', [eventId]);
+  if (eventRes.rows.length === 0) {
+    const error = new Error('Event not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await db.query(
+    `UPDATE events
+     SET gallery_urls = COALESCE((
+       SELECT jsonb_agg(value)
+       FROM jsonb_array_elements_text(COALESCE(gallery_urls, '[]'::jsonb)) value
+       WHERE value <> $2
+     ), '[]'::jsonb),
+     updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1`,
+    [eventId, photoUrl]
+  );
+
+  return { deleted: true };
+};
+
 module.exports = {
   uploadPhoto,
   listGalleryItems,
-  likeGalleryItem
+  likeGalleryItem,
+  deleteGalleryItem
 };

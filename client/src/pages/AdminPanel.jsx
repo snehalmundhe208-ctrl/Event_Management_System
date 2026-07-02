@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
-import { Shield, Users, Calendar, AlertTriangle, Play, Pause, CheckCircle2, XCircle, Clock3 } from 'lucide-react';
+import { Shield, AlertTriangle, Play, Pause, CheckCircle2, XCircle, Clock3 } from 'lucide-react';
 import { toAssetUrl } from '../utils/assets';
+import PieChart from '../components/PieChart';
 
 export default function AdminPanel() {
   const [users, setUsers] = useState([]);
@@ -139,13 +140,33 @@ export default function AdminPanel() {
         ))}
       </div>
 
-      {activeTab === 'analytics' && analytics && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="stat-card flex items-center justify-between p-6"><div><p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Total accounts</p><p className="mt-2 text-3xl font-semibold text-ink">{analytics.totalUsers}</p></div><Users className="h-10 w-10 text-primary" /></div>
-          <div className="stat-card flex items-center justify-between p-6"><div><p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Events created</p><p className="mt-2 text-3xl font-semibold text-ink">{analytics.totalEvents}</p></div><Calendar className="h-10 w-10 text-success" /></div>
-          <div className="stat-card flex items-center justify-between p-6"><div><p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Total bookings</p><p className="mt-2 text-3xl font-semibold text-ink">{analytics.totalRegistrations}</p></div><Shield className="h-10 w-10 text-accent" /></div>
-        </div>
-      )}
+      {activeTab === 'analytics' && analytics && (() => {
+        const eventsByStatus = Array.isArray(analytics.eventsByStatus)
+          ? analytics.eventsByStatus.map((row) => ({ label: row.status, value: row.count }))
+          : [];
+        const usersByRole = Array.isArray(analytics.usersByRole)
+          ? analytics.usersByRole.map((row) => ({ label: row.role, value: row.count }))
+          : [];
+        const bookingsBuckets = (() => {
+          const rows = Array.isArray(analytics.bookingsOverTime) ? analytics.bookingsOverTime : [];
+          const buckets = [];
+          for (let i = 0; i < rows.length; i += 7) {
+            const slice = rows.slice(i, i + 7);
+            const label = slice.length > 1 ? `${slice[0].day}–${slice[slice.length - 1].day}` : slice[0]?.day || '';
+            const value = slice.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+            buckets.push({ label, value });
+          }
+          return buckets.filter((b) => b.label);
+        })();
+
+        return (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <PieChart title="Events by status" data={eventsByStatus} centerLabel="Events" centerValue={analytics.totalEvents} />
+            <PieChart title="Users by role" data={usersByRole} centerLabel="Users" centerValue={analytics.totalUsers} />
+            <PieChart title="Bookings (last 30d)" data={bookingsBuckets} centerLabel="Bookings" centerValue={analytics.totalRegistrations} />
+          </div>
+        );
+      })()}
 
       {activeTab === 'users' && (
         <div className="card entrance-card p-6">

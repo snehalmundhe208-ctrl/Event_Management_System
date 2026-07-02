@@ -46,8 +46,13 @@ const scanCheckIn = async ({ ticketCode, signature, eventId }, scannedBy) => {
     throw error;
   }
 
-  const eventRes = await db.query('SELECT organizer_id FROM events WHERE id = $1', [ticket.event_id]);
+  const eventRes = await db.query('SELECT organizer_id, status FROM events WHERE id = $1', [ticket.event_id]);
   const event = eventRes.rows[0];
+  if (event.status !== 'published') {
+    const error = new Error('Check-in is only available for published events');
+    error.statusCode = 400;
+    throw error;
+  }
   if (event.organizer_id !== scannedBy) {
     const userRoleRes = await db.query('SELECT roles FROM users WHERE id = $1', [scannedBy]);
     const roles = userRoleRes.rows[0]?.roles || [];
@@ -99,8 +104,13 @@ const manualCheckIn = async ({ ticketCode, eventId }, scannedBy) => {
     throw error;
   }
 
-  const eventRes = await db.query('SELECT organizer_id FROM events WHERE id = $1', [ticket.event_id]);
+  const eventRes = await db.query('SELECT organizer_id, status FROM events WHERE id = $1', [ticket.event_id]);
   const event = eventRes.rows[0];
+  if (event.status !== 'published') {
+    const error = new Error('Check-in is only available for published events');
+    error.statusCode = 400;
+    throw error;
+  }
   if (event.organizer_id !== scannedBy) {
     const userRoleRes = await db.query('SELECT roles FROM users WHERE id = $1', [scannedBy]);
     const roles = userRoleRes.rows[0]?.roles || [];

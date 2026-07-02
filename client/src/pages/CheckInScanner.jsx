@@ -8,12 +8,45 @@ export default function CheckInScanner() {
   const { eventId } = useParams();
   const navigate = useNavigate();
 
+  const [event, setEvent] = useState(null);
+  const [eventLoading, setEventLoading] = useState(true);
   const [manualCode, setManualCode] = useState('');
   const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
   const [attendee, setAttendee] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setEventLoading(true);
+      try {
+        const res = await api.get(`/events/${eventId}`);
+        if (cancelled) return;
+        setEvent(res.data);
+        if (res.data?.status !== 'published') {
+          setStatus('error');
+          setMessage('Check-in is only available for published events');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setEvent(null);
+          setStatus('error');
+          setMessage(err.response?.data?.message || 'Event not found');
+        }
+      } finally {
+        if (!cancelled) setEventLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+
+  const canScan = event?.status === 'published';
+
+  useEffect(() => {
+    if (eventLoading || !event || !canScan) return;
     const scanner = new Html5QrcodeScanner('qr-reader', {
       fps: 10,
       qrbox: 250
@@ -64,7 +97,7 @@ export default function CheckInScanner() {
     return () => {
       scanner.clear().catch(err => console.error('Failed to clear scanner', err));
     };
-  }, [eventId]);
+  }, [canScan, event, eventId, eventLoading]);
 
   const handleManualCheckIn = async (e) => {
     e.preventDefault();
@@ -124,33 +157,41 @@ export default function CheckInScanner() {
           </div>
         )}
 
-        <div className="flex flex-col items-center overflow-hidden rounded-[26px] border border-border bg-bg-soft p-6">
-          <div className="mb-4 flex items-center space-x-2 text-sm text-muted">
-            <Video className="h-4 w-4 text-primary" />
-            <span>Active Camera Scanner</span>
-          </div>
-          <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-[22px] border border-border bg-surface shadow-inner"></div>
-        </div>
+        {eventLoading ? (
+          <div className="rounded-2xl bg-bg-soft px-4 py-8 text-center text-sm text-muted">Loading event…</div>
+        ) : canScan ? (
+          <>
+            <div className="flex flex-col items-center overflow-hidden rounded-[26px] border border-border bg-bg-soft p-6">
+              <div className="mb-4 flex items-center space-x-2 text-sm text-muted">
+                <Video className="h-4 w-4 text-primary" />
+                <span>Active Camera Scanner</span>
+              </div>
+              <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-[22px] border border-border bg-surface shadow-inner"></div>
+            </div>
 
-        <form onSubmit={handleManualCheckIn} className="space-y-3 border-t border-border pt-6">
-          <h3 className="text-sm font-bold text-ink">Manual Check-In</h3>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="Enter Ticket Code (e.g. TIC-XXXXXXXX)"
-              className="input-base flex-1"
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="btn-primary"
-            >
-              <Send className="h-4 w-4 mr-1.5" />
-              <span>Verify Code</span>
-            </button>
-          </div>
-        </form>
+            <form onSubmit={handleManualCheckIn} className="space-y-3 border-t border-border pt-6">
+              <h3 className="text-sm font-bold text-ink">Manual Check-In</h3>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Enter Ticket Code (e.g. TIC-XXXXXXXX)"
+                  className="input-base flex-1"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="btn-primary"
+                >
+                  <Send className="h-4 w-4 mr-1.5" />
+                  <span>Verify Code</span>
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <div className="rounded-2xl bg-bg-soft px-4 py-8 text-center text-sm font-medium text-muted">Check-in is only available for published events.</div>
+        )}
       </div>
     </div>
   );
